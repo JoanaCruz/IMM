@@ -1,9 +1,9 @@
 from sys import argv
 import gzip
 
-script, fast_file, delete, out_directory =argv
+script, in_directory, fast_file, delete, out_directory =argv
 
-fastq_file=fast_file + ".fq.gz"
+fastq_file=in_directory + fast_file + ".fq.gz"
 delete=int(delete)
 
 inf=gzip.open(fastq_file, mode='rb')
