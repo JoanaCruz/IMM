@@ -1,13 +1,13 @@
 from sys import argv
 import gzip
 
-script, fast_file, delete =argv
+script, fast_file, delete, out_directory =argv
 
 fastq_file=fast_file + ".fq.gz"
 delete=int(delete)
 
 inf=gzip.open(fastq_file, mode='rb')
-out_file = gzip.open(fast_file + "_trimmed.gz", mode='wb',compresslevel=9)
+out_file = gzip.open(out_directory + fast_file + "_trimmed.gz", mode='wb',compresslevel=9)
 for (i, line) in enumerate(inf):
 	if i % 2 != 0:
 		out_file.write(line[delete:])
