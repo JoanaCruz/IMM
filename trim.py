@@ -20,5 +20,6 @@ out_file = gzip.open(fast_file + "_trimmed.gz", mode='wb',compresslevel=9)
 			if i in range (0,10):
 				print line
 
+inf.close()
 out_file.close()
 
