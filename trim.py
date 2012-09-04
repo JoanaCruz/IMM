@@ -6,7 +6,7 @@ script, fast_file, delete =argv
 fastq_file=fast_file + ".fq.gz"
 delete=int(delete)
 
-inf=gzip.open(fastq_file, mode='rb') as inf:
+inf=gzip.open(fastq_file, mode='rb')
 out_file = gzip.open(fast_file + "_trimmed.gz", mode='wb',compresslevel=9)
 for (i, line) in enumerate(inf):
 	if i % 2 != 0:
