@@ -28,7 +28,7 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 # make sequences alignment with the human genome (using Bowtie2 with 0 number of mismatches allowed and with all paired ends that aligned written at %_all.sam)
 $(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_trimmed.gz | $(SAM_DIR)/.d
 	@ unzip $(AREF)/*.zip
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 -N 0 -1 $(TRIM_DIR)/*1_trimmed.gz -2 $(TRIM_DIR)/*2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/*1_trimmed.gz -2 $(TRIM_DIR)/*2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ gzip $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ zip *.bt2
 	@ zip *.sh
