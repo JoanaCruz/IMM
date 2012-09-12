@@ -29,7 +29,7 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 $(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_trimmed.gz | $(SAM_DIR)/.d
 	@ gunzip $(AREF)/*.bt2.gz
 	@ gunzip $(AREF)/*.sh.gz
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/*1_trimmed.gz -2 $(TRIM_DIR)/*2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$(filter-out _1,$*)_trimmed.gz -2 $(TRIM_DIR)/$(filter-out _2,$*)_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ gzip $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ gzip $(AREF)/*.bt2
 	@ gzip $(AREF)/*.sh
