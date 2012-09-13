@@ -13,11 +13,10 @@ BOWTIE_DIR=bowtie2-2.0.0-beta7
 all: sorted
 
 sorted: $(addprefix $(SORTED_DIR)/,$(addsuffix _sorted.sam.gz, $(notdir $(basename $(basename $(wildcard $(READS_DIR)/*.fq.gz))))))
-	
-sam: $(addprefix $(SAM_DIR)/,$(addsuffix .sam.gz, $(notdir $(basename $(basename $(wildcard $(READS_DIR)/*.fq.gz))))))
+
+sam: $(addprefix $(SAM_DIR)/,$(addsuffix .sam.gz, $(notdir $(subst _1.fq.gz,, $(wildcard $(READS_DIR)/*_1.fq.gz)))))
 
 trim: $(addprefix $(TRIM_DIR)/,$(addsuffix _trimmed.gz,$(notdir $(basename $(basename $(wildcard $(READS_DIR)/*.fq.gz))))))
-
 
 
 # make bases trim (delete first 15 bases from the beginning of the sequences)
@@ -25,11 +24,11 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 	@ python trim.py $(READS_DIR)/ $* 15 $(MAKE_DIR)/$(TRIM_DIR)/ 
 	@ echo "Bases trimmed."
 
-# make sequences alignment with the human genome (using Bowtie2 with 0 number of mismatches allowed and with all paired ends that aligned written at %_all.sam)
-$(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_trimmed.gz | $(SAM_DIR)/.d
+# make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
+$(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz | $(SAM_DIR)/.d
 	@ gunzip $(AREF)/*.bt2.gz
 	@ gunzip $(AREF)/*.sh.gz
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$(filter-out _1,$*)_trimmed.gz -2 $(TRIM_DIR)/$(filter-out _2,$*)_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ gzip $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ gzip $(AREF)/*.bt2
 	@ gzip $(AREF)/*.sh
