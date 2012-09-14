@@ -8,7 +8,7 @@ TRIM_DIR=trim
 SAM_DIR=sam_aligned
 SORTED_DIR=sam_sorted
 BOWTIE_DIR=bowtie2-2.0.0-beta7
-COUTS_DIR=counted_reads
+COUNTS_DIR=counted_reads
 
 all: counts
 
@@ -50,7 +50,8 @@ $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(COUNTS_DIR)/.d
 	@ gunzip $(SORTED_DIR)/*.sam.gz 
-	@ python -m HTSeq.scripts.count -i ID $(SORTED_DIR)/$*_sorted.sam $(AREF)/*.gff
+	@ gunzip $(AREF)/*.gtf.gz
+	@ python -m HTSeq.scripts.count $(SORTED_DIR)/$*_sorted.sam $(AREF)/*.gtf > $(COUNTS_DIR)/$*.txt
 	@ gzip $(SORTED_DIR)/*.sam
 	@ gzip $(COUNTS_DIR)/*.txt
 
@@ -69,4 +70,5 @@ clean:
 	rm -r -f $(TRIM_DIR)
 	rm -r -f $(SORTED_DIR) 
 	rm -r -f $(COUNTS_DIR)
+
 
