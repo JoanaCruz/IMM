@@ -1,1 +1,5 @@
-experiencia
+To run this:
+
+1. Edit the Makefile to make sure ``READS_DIR`` points to the directory where
+the raw reads are.
+
