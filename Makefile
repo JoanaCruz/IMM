@@ -28,12 +28,8 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 
 # Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
 $(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SAM_DIR)/.d
-	@ gunzip $(AREF)/*.bt2.gz
-	@ gunzip $(AREF)/*.sh.gz
 	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
 	@ gzip $(MAKE_DIR)/$(SAM_DIR)/$*.sam
-	@ gzip $(AREF)/*.bt2
-	@ gzip $(AREF)/*.sh
 	@ echo "Alignment done."
 
 ## Sort the SAM file by read name (to use in HTSeq) unzip
@@ -50,7 +46,6 @@ $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(COUNTS_DIR)/.d
 	@ gunzip $(SORTED_DIR)/*.sam.gz 
-	@ gunzip $(AREF)/*.gtf.gz
 	@ python -m HTSeq.scripts.count $(SORTED_DIR)/$*_sorted.sam $(AREF)/*.gtf > $(COUNTS_DIR)/$*.txt
 	@ gzip $(SORTED_DIR)/*.sam
 	@ gzip $(COUNTS_DIR)/*.txt
