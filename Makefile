@@ -27,7 +27,7 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 	@ echo "Bases trimmed."
 
 # Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
-$(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz | $(SAM_DIR)/.d
+$(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SAM_DIR)/.d
 	@ gunzip $(AREF)/*.bt2.gz
 	@ gunzip $(AREF)/*.sh.gz
 	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
