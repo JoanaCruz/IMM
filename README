@@ -2,4 +2,9 @@ To run this:
 
 1. Edit the Makefile to make sure ``READS_DIR`` points to the directory where
 the raw reads are.
+2. Run the following::
 
+    mkdir Genome
+    cd Genome
+    wget ftp://ftp.cbcb.umd.edu/pub/data/bowtie2_indexes/incl/hg19.zip
+    unzip hg19.zip
