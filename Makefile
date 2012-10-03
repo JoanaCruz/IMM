@@ -33,8 +33,7 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 
 # Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
 $(SAM_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SAM_DIR)/.d
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz -S $(MAKE_DIR)/$(SAM_DIR)/$*.sam
-	@ gzip $(MAKE_DIR)/$(SAM_DIR)/$*.sam
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(MAKE_DIR)/$(SAM_DIR)/$*.sam.gz
 	@ echo "Alignment done."
 
 ## Sort the SAM file by read name (to use in HTSeq) unzip
