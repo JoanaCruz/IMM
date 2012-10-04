@@ -9,12 +9,15 @@ SAM_DIR=sam_aligned
 SORTED_DIR=sam_sorted
 BOWTIE_DIR=bowtie2-2.0.0-beta7
 COUNTS_DIR=counted_reads
+PAIRED_DIR=paired_reads
 
 GTF_FILE := $(AREF)/Homo_sapiens.GRCh37.68.gtf
 
 all: counts
 
 counts: $(addprefix $(COUNTS_DIR)/,$(addsuffix .txt.gz, $(notdir $(subst _1.fq.gz,, $(wildcard $(READS_DIR)/*_1.fq.gz)))))
+
+paired: $(addprefix $(PAIRED_DIR)/,$(addsuffix _paired.sam.gz, $(notdir $(subst _1.fq.gz,, $(wildcard $(READS_DIR)/*_1.fq.gz)))))
 
 sorted: $(addprefix $(SORTED_DIR)/,$(addsuffix _sorted.sam.gz, $(notdir $(subst _1.fq.gz,, $(wildcard $(READS_DIR)/*_1.fq.gz)))))
 
@@ -47,6 +50,11 @@ $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 	@ gzip $(SORTED_DIR)/$*_sorted.sam
 	@ echo "SAM file sorted."
 
+# Filter paired end reads which only one align
+$(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz
+	@ python paired_end.py $(SORTED_DIR)/ $* $(MAKE_DIR)/$(PAIRED_DIR)/
+	@ echo "Reads filtered."
+ 
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(SORTED_DIR)/%_sorted.sam.gz $(GTF_FILE) | $(COUNTS_DIR)/.d
 	@ gunzip $(SORTED_DIR)/*.sam.gz 
