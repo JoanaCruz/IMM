@@ -1,9 +1,9 @@
 from sys import argv
 import gzip
 
-script, in_directory, sam_file, out_directory, =argv
+script, in_directory, sam_file, out_directory = argv
 
-inf=gzip.open(directory + sam_file + "_sorted.sam.gz", mode='rb')
+inf=gzip.open(in_directory + sam_file + "_sorted.sam.gz", mode='rb')
 out_file = gzip.open(out_directory + sam_file + "_paired.sam.gz", mode='wb',compresslevel=9)
 j=0
 for (i,line) in enumerate(inf):
