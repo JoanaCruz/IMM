@@ -16,16 +16,18 @@ for (i,line) in enumerate(inf):
 	else:
 		o=o+1
 		if (i+j)%2 == 0:
-			l = line.split()[5]
+			l1 = line.split()[5]
 			name = line
 		else:
-			print l, line.split()[5]
-			if l == line.split()[5]:
+			l2=line.split()[5]
+			if (l1 != l2) and (l1=="*" or l2=="*"):
+				pass
+			else:
 				out_file.write(name)
 				out_file.write(line)
 				y=y+2
 			
-print o
-print y
+print "Original file (number of lines):%d" %o
+print "Filtered file (number of lines):%d" %y
 inf.close()
 out_file.close()
