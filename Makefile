@@ -1,9 +1,9 @@
 # Alignment reference
-AREF=Genome1
+AREF=Genome
 
 # Directories
 MAKE_DIR=.
-READS_DIR =.
+READS_DIR =/data/reads
 TRIM_DIR=trim
 SAM_DIR=sam_aligned
 SORTED_DIR=sam_sorted
@@ -26,8 +26,10 @@ sam: $(addprefix $(SAM_DIR)/,$(addsuffix .sam.gz, $(notdir $(subst _1.fq.gz,, $(
 trim: $(addprefix $(TRIM_DIR)/,$(addsuffix _trimmed.gz,$(notdir $(basename $(basename $(wildcard $(READS_DIR)/*.fq.gz))))))
 
 $(GTF_FILE):
-	@cd $(AREF) && wget ftp://ftp.ensembl.org/pub/release-68/gtf/homo_sapiens/Homo_sapiens.GRCh37.68.gtf.gz
-	@gunzip $@.gz
+	@ cd $(AREF) && wget ftp://ftp.ensembl.org/pub/release-68/gtf/homo_sapiens/Homo_sapiens.GRCh37.68.gtf.gz
+	@ pyhton chr_in_gtf.py $(AREF)/ Homo_sapiens.GRCh37.68 $(AREF)/
+#add rule to delete wrong gtf?
+	@ rm -f $@.gz
 
 # Make bases trim (delete first 15 bases from the beginning of the sequences)
 $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
