@@ -11,7 +11,6 @@ for (i,line) in enumerate(inf):
 	ins = string[13] 
 	string[13] = ins[0]+"chr"+ins[1:]
 	string=" ".join(string)
-	print string
 	out_file.write(string +"\n")
 
 inf.close()
