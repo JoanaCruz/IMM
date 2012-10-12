@@ -1,5 +1,5 @@
 # Alignment reference
-AREF=Genome
+AREF=../Genome
 
 # Directories
 MAKE_DIR=.
