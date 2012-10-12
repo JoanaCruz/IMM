@@ -27,7 +27,7 @@ trim: $(addprefix $(TRIM_DIR)/,$(addsuffix _trimmed.gz,$(notdir $(basename $(bas
 
 $(GTF_FILE):
 	@ cd $(AREF) && wget ftp://ftp.ensembl.org/pub/release-68/gtf/homo_sapiens/Homo_sapiens.GRCh37.68.gtf.gz
-	@ pyhton chr_in_gtf.py $(AREF)/ Homo_sapiens.GRCh37.68 $(AREF)/
+	@ python chr_in_gtf.py $(AREF)/ Homo_sapiens.GRCh37.68 $(AREF)/
 #add rule to delete wrong gtf?
 	@ rm -f $@.gz
 
