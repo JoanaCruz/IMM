@@ -91,6 +91,7 @@ $(DESEQ_DIR)/DESeq_HeLa_%.txt.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/
 	@ touch $@
 
 
+
 # Delete everything
 clean:
 	rm -f *_trimmed.gz 

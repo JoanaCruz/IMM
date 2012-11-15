@@ -54,3 +54,4 @@ write.table(res_pvalue, file = sprintf("%sDESeq_LM_HeLa_%s_pvalue.txt", args[3],
 write.table(res_down, file = sprintf("%sDESeq_LM_HeLa_%s_up.txt", args[3], arg[2]))
 
 write.table(res_up, file = sprintf("%sDESeq_LM_HeLa_%s_down.txt", args[3], arg[2]))
+
