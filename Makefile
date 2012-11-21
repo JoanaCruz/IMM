@@ -65,9 +65,8 @@ $(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(PAIRED_DIR)/.d
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DIR)/.d
 	@ gunzip $(PAIRED_DIR)/*.sam.gz 
-	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19.gtf > $(COUNTS_DIR)/$*.txt
+	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19.gtf | gzip > $@
 	@ gzip $(PAIRED_DIR)/*.sam
-	@ gzip $(COUNTS_DIR)/*.txt
 
 
 # Concatenate files from HTSeq-count (same timepoint diferetn condition)
