@@ -11,10 +11,13 @@ BOWTIE_DIR=../bowtie2-2.0.0-beta7
 COUNTS_DIR=counted_reads
 PAIRED_DIR=paired_reads
 DESEQ_DIR=DESeq
+GO_DIR=GOStats
 
-GTF_FILE := $(AREF)/hg19.gtf
+GTF_FILE := $(AREF)/hg19_refseq.gtf
 
-all: R
+all: GO
+
+GO: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 R: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
@@ -65,7 +68,7 @@ $(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(PAIRED_DIR)/.d
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DIR)/.d
 	@ gunzip $(PAIRED_DIR)/*.sam.gz 
-	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19.gtf | gzip > $@
+	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19_refseq.gtf | gzip > $@
 	@ gzip $(PAIRED_DIR)/*.sam
 
 
@@ -81,7 +84,13 @@ $(COUNTS_DIR)/LM_HeLa_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR
 $(DESEQ_DIR)/DESeq_HeLa_%.txt.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/.d
 	@ gunzip $(COUNTS_DIR)/LM_HeLa_$*.txt.gz
 	@ Rscript $(MAKE_DIR)/DEseq.R $(COUNTS_DIR)/LM_HeLa_$*.txt $* $(DESEQ_DIR)/
-	@ gzip $(DESEQ_DIR)/DESeq_HeLa_$*.txt
+	@ gzip $(DESEQ_DIR)/*.txt
+
+# GO annotation (using GOstats)
+$(GO_DIR)/GOsummary_%.txt.gz: $(DESEQ_DIR)/DESeq_HeLa_%.txt.gz | $(GO_DIR)/.d
+	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt.gz
+	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt.gz $* $(GO_DIR)/
+	@ gzip $(GO_DIR)/GOsummary_$*.txt
 
 
 # Create a directory (use DIR/.d)
@@ -102,4 +111,5 @@ clean:
 	rm -r -f $(SORTED_DIR) 
 	rm -r -f $(COUNTS_DIR)
 	rm -r -f $(PAIRED_DIR)
-	rm -r -f $(DESEQ_DIR) 
+	rm -r -f $(DESEQ_DIR)
+	rm -r -f $(GO_DIR) 
