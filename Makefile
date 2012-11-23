@@ -8,9 +8,9 @@ TRIM_DIR=trim
 SAM_DIR=sam_aligned
 SORTED_DIR=sam_sorted
 BOWTIE_DIR=../bowtie2-2.0.0-beta7
-COUNTS_DIR=counted_reads
+COUNTS_DIR=counted_reads_essembl
 PAIRED_DIR=paired_reads
-DESEQ_DIR=DESeq
+DESEQ_DIR=DESeq_essembl
 GO_DIR=GOStats
 
 GTF_FILE := $(AREF)/hg19_refseq.gtf
@@ -19,7 +19,7 @@ all: GO
 
 GO: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
-R: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+R: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq_LM, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 concatenate: $(addprefix $(COUNTS_DIR)/,$(subst LM1, LM, $(notdir $(subst L1_1.fq.gz,HeLa.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
@@ -81,15 +81,15 @@ $(COUNTS_DIR)/LM_HeLa_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR
 
 
 # Do differencial expression analysis (using DESeq)
-$(DESEQ_DIR)/DESeq_HeLa_%.txt.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/.d
+$(DESEQ_DIR)/DESeq_LM_HeLa_%.txt.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/.d
 	@ gunzip $(COUNTS_DIR)/LM_HeLa_$*.txt.gz
 	@ Rscript $(MAKE_DIR)/DEseq.R $(COUNTS_DIR)/LM_HeLa_$*.txt $* $(DESEQ_DIR)/
 	@ gzip $(DESEQ_DIR)/*.txt
 
 # GO annotation (using GOstats)
-$(GO_DIR)/GOsummary_%.txt.gz: $(DESEQ_DIR)/DESeq_HeLa_%.txt.gz | $(GO_DIR)/.d
+$(GO_DIR)/GOsummary_%.txt.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.txt.gz | $(GO_DIR)/.d
 	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt.gz
-	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt.gz $* $(GO_DIR)/
+	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt $* $(GO_DIR)/
 	@ gzip $(GO_DIR)/GOsummary_$*.txt
 
 
