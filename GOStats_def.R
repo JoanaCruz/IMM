@@ -22,7 +22,7 @@ genes_refseq=as.character(data$id)
 ### Filtering-noEntrez
 ###################################################
 ## Remove genes that have no entrezGene id
-entrezIds <- mget(genes_refseq, envir=org.Hs.egREFSEQ2EG)
+entrezIds <- mget(genes_refseq, envir=org.Hs.egREFSEQ2EG, ifnotfound=NA)
 genes_refseq <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
 
 
@@ -63,7 +63,7 @@ entrezUniverse <- as.list(org.Hs.egREFSEQ2EG)
 
 
 ###################################################
-### code chunk number 11: standardHyperGeo
+### HyperGeo
 ###################################################
 hgCutoff <- 0.01
 params <- new("GOHyperGParams",
@@ -75,18 +75,15 @@ params <- new("GOHyperGParams",
               conditional=FALSE,
               testDirection="over")
 
-###################################################
-### code chunk number 12: condHyperGeo
-###################################################
 paramsCond <- params
 
 ###################################################
-### code chunk number 13: standardHGTEST
+### HGTEST
 ###################################################
 hgOver <- hyperGTest(params)
 
 ###################################################
-### code chunk number 15: summaryEx
+### summary
 ###################################################
 df <- summary(hgOver)
 
