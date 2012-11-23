@@ -90,4 +90,4 @@ hgOver <- hyperGTest(params)
 ###################################################
 df <- summary(hgOver)
 
-write.table(res_pvalue, file = sprintf("%sGOsummary_%s_pvalue.txt", args[3], arg[2]))
+write.table(df, file = sprintf("%sGOsummary_%s.txt", args[3], args[2]))
