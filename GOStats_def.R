@@ -66,14 +66,17 @@ entrezUniverse <- as.list(org.Hs.egREFSEQ2EG)
 ### HyperGeo
 ###################################################
 hgCutoff <- 0.01
-params <- new("GOHyperGParams",
-              geneIds=genesIds, #or gene_entrez (equal)
-              universeGeneIds=entrezUniverse,
-              annotation="org.Hs.eg.db",
-              ontology="BP",
-              pvalueCutoff=hgCutoff,
-              conditional=FALSE,
-              testDirection="over")
+
+ontologies = c('MF', 'BP', 'CC')
+for (ont in ontologies) {
+	params <- new("GOHyperGParams",
+             	geneIds=genesIds, #or gene_entrez (equal)
+              	universeGeneIds=entrezUniverse,
+              	annotation="org.Hs.eg.db",
+              	ontology=ont,
+              	pvalueCutoff=hgCutoff,
+              	conditional=FALSE,
+              	testDirection="over")
 
 paramsCond <- params
 
@@ -87,4 +90,5 @@ hgOver <- hyperGTest(params)
 ###################################################
 df <- summary(hgOver)
 
-write.table(df, file = sprintf("%sGOsummary_%s.txt", args[3], args[2]))
+write.table(df, file = sprintf("%sGOsummary_%s_%s.txt", args[3], ont, args[2]))
+}
