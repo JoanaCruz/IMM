@@ -91,7 +91,7 @@ $(GO_DIR)/GOsummary_%.txt.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.txt.gz | $(GO_
 	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt.gz
 	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt $* $(GO_DIR)/
 	@ gzip $(GO_DIR)/GOsummary_$*.txt
-
+	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt
 
 # Create a directory (use DIR/.d)
 %/.d:
