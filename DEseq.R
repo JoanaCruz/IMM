@@ -15,8 +15,6 @@ libraryType=dataDesign$libType
 
 library( "DESeq" )
 
-print(conditions)
-
 data = newCountDataSet(count_table, conditions)
 
 
@@ -41,17 +39,19 @@ data = estimateDispersions( data, method="blind", sharingMode="fit-only" , fitTy
 # Now, we can attempt to find differential expression:
 res = nbinomTest( data, colnames( count_table )[1], colnames( count_table )[2] )
 
-resp=subset(res,res$padj<0.1)
+#resp=subset(res,res$padj<0.1)
 
-res_pvalue=resp[ order(resp$pval), ]
+#res_pvalue=resp[ order(resp$pval), ]
 
-res_down=resp[ order( resp$foldChange, -resp$baseMean ), ]
+#res_down=resp[ order( resp$foldChange, -resp$baseMean ), ]
 
-res_up=resp[ order( -resp$foldChange, -resp$baseMean ), ]
+#res_up=resp[ order( -resp$foldChange, -resp$baseMean ), ]
 
-write.table(res_pvalue, file = sprintf("%sDESeq_LM_HeLa_%s_pvalue.txt", args[3], args[2]))
+#write.table(res_pvalue, file = sprintf("%sDESeq_LM_HeLa_%s_pvalue.txt", args[3], args[2]))
 
-write.table(res_up, file = sprintf("%sDESeq_LM_HeLa_%s_up.txt", args[3], args[2]))
+#write.table(res_up, file = sprintf("%sDESeq_LM_HeLa_%s_up.txt", args[3], args[2]))
 
-write.table(res_down, file = sprintf("%sDESeq_LM_HeLa_%s_down.txt", args[3], args[2]))
+#write.table(res_down, file = sprintf("%sDESeq_LM_HeLa_%s_down.txt", args[3], args[2]))
+
+write.table(res, file = sprintf("%sDESeq_LM_HeLa_%s_ALL.txt", args[3], args[2]))
 
