@@ -8,9 +8,9 @@ TRIM_DIR=trim
 SAM_DIR=sam_aligned
 SORTED_DIR=sam_sorted
 BOWTIE_DIR=../bowtie2-2.0.0-beta7
-COUNTS_DIR=counted_reads_essembl
+COUNTS_DIR=counted_reads
 PAIRED_DIR=paired_reads
-DESEQ_DIR=DESeq_essembl
+DESEQ_DIR=DESeq
 GO_DIR=GOStats
 
 GTF_FILE := $(AREF)/hg19_refseq.gtf
@@ -90,7 +90,7 @@ $(DESEQ_DIR)/DESeq_LM_HeLa_%.txt.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DI
 $(GO_DIR)/GOsummary_%.txt.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.txt.gz | $(GO_DIR)/.d
 	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt.gz
 	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt $* $(GO_DIR)/
-	@ gzip $(GO_DIR)/GOsummary_$*.txt
+	@ gzip $(GO_DIR)/*.txt
 	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt
 
 # Create a directory (use DIR/.d)
