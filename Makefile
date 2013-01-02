@@ -17,7 +17,7 @@ GTF_FILE := $(AREF)/hg19_refseq.gtf
 
 all: GO
 
-GO: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+GO: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 R: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq_LM, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
@@ -85,11 +85,11 @@ $(DESEQ_DIR)/DESeq_LM_HeLa_%.csv.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DI
 	@ gzip $(DESEQ_DIR)/*.csv
 
 # GO annotation (using GOstats)
-$(GO_DIR)/GOsummary_%.txt.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_DIR)/.d
+$(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_DIR)/.d
 	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv.gz
-	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt $* $(GO_DIR)/
-	@ gzip $(GO_DIR)/*.txt
-	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.txt
+	@ Rscript $(MAKE_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv $* $(GO_DIR)/
+	@ gzip $(GO_DIR)/*.csv
+	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv
 
 # Create a directory (use DIR/.d)
 %/.d:
