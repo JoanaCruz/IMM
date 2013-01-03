@@ -11,11 +11,11 @@ SCRIPT_DIR=../Scripts
 
 #Auxiliary directories
 TRIM_DIR=$(HUMAN_DIR)/trim
-SORTED_DIR=$(HUMAN_DIR)/align&sorted
-PAIRED_DIR=$(HUMAN_DIR)/paired_reads
-COUNTS_DIR=$(HUMAN_DIR)/counts
-DESEQ_DIR=$(HUMAN_DIR)/DESeq
-GO_DIR=$(HUMAN_DIR)/GOStats
+SORTED_DIR=$(HUMAN_DIR)/align&sorted_list
+PAIRED_DIR=$(HUMAN_DIR)/paired_reads_list
+COUNTS_DIR=$(MIT_DIR)/counts_list
+DESEQ_DIR=$(MIT_DIR)/DESeq_list
+GO_DIR=$(MIT_DIR)/GOStats_list
 
 GTF_FILE := $(AREF)/hg19_refseq.gtf
 
@@ -47,13 +47,16 @@ $(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz 
 	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
 	@ echo "Alignment done."
 
-
+# Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
+$(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SORTED_DIR)/.d
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
+	@ echo "Alignment done."
 ### Arrange SAM files.
 
 ## Sort the SAM file by read name (to use in HTSeq) unzip
 # Convert .sam to .bam and sort
-$(SORTED_DIR)/%_sorted.bam : $(SAM_DIR)/%.sam.gz
-	@ samtools view -bS $(SAM_DIR)/$*.sam.gz | samtools sort -n - $(SORTED_DIR)/$*_sorted
+$(SORTED_DIR)/%_sorted.bam : $(SORTED_DIR)/%.sam.gz
+	@ samtools view -bS $(SORTED_DIR)/$*.sam.gz | samtools sort -n - $(SORTED_DIR)/$*_sorted
 # Convert .bam sorted to .sam
 $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 	@ samtools view $(SORTED_DIR)/$*_sorted.bam -h > $(SORTED_DIR)/$*_sorted.sam
@@ -63,14 +66,14 @@ $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 
 # Filter paired end reads which only one align
 $(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(PAIRED_DIR)/.d
-	@ python $(SCRIPT_DIR)/paired_end.py $(SORTED_DIR)/ $*$(PAIRED_DIR)/
+	@ python $(SCRIPT_DIR)/paired_end.py $(SORTED_DIR)/ $* $(PAIRED_DIR)/
 	@ echo "Reads filtered."
 
 
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
-$(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DIR)/.d
+$(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz | $(COUNTS_DIR)/.d
 	@ gunzip $(PAIRED_DIR)/*.sam.gz 
-	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19_refseq.gtf | gzip > $@
+	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/Esembl_MIT.gtf | gzip > $@
 	@ gzip $(PAIRED_DIR)/*.sam
 
 
@@ -92,7 +95,7 @@ $(DESEQ_DIR)/DESeq_LM_HeLa_%.csv.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DI
 # GO annotation (using GOstats)
 $(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_DIR)/.d
 	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv.gz
-	@ Rscript $(SCRIPT_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv $* $(GO_DIR)/
+	@ Rscript $(SCRIPT_DIR)/GOStats_mitocondrial.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv $* $(GO_DIR)/
 	@ gzip $(GO_DIR)/*.csv
 	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv
 
@@ -105,9 +108,6 @@ $(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_
 
 # Delete everything
 clean:
-	rm -r -f $(TRIM_DIR)
-	rm -r -f $(SORTED_DIR)
-	rm -r -f $(PAIRED_DIR)
 	rm -r -f $(COUNTS_DIR)
 	rm -r -f $(DESEQ_DIR)
 	rm -r -f $(GO_DIR)

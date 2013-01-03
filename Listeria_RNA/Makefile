@@ -7,17 +7,16 @@ LIST_DIR=Listeria_RNA
 MIT_DIR=Mitocondrial_DNA
 READS_DIR =/data/reads
 BOWTIE_DIR=../../bowtie2-2.0.0-beta7
-SCRIPT_DIR=../Scripts
 
 #Auxiliary directories
 TRIM_DIR=$(HUMAN_DIR)/trim
-SORTED_DIR=$(HUMAN_DIR)/align&sorted
-PAIRED_DIR=$(HUMAN_DIR)/paired_reads
-COUNTS_DIR=$(HUMAN_DIR)/counts
-DESEQ_DIR=$(HUMAN_DIR)/DESeq
-GO_DIR=$(HUMAN_DIR)/GOStats
+SORTED_DIR=$(LIST_DIR)/align&sorted_list
+PAIRED_DIR=$(LIST_DIR)/paired_reads_list
+COUNTS_DIR=$(LIST_DIR)/counts_list
+DESEQ_DIR=$(LIST_DIR)/DESeq_list
+GO_DIR=$(LIST_DIR)/GOStats_list
 
-GTF_FILE := $(AREF)/hg19_refseq.gtf
+GTF_FILE := $(AREF)/listeria_monocytogenes_j0161_8_transcripts.gtf
 
 all: gostats
 
@@ -44,16 +43,15 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 
 # Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
 $(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SORTED_DIR)/.d
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/listeria_transcripts_j0161 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
 	@ echo "Alignment done."
-
 
 ### Arrange SAM files.
 
 ## Sort the SAM file by read name (to use in HTSeq) unzip
 # Convert .sam to .bam and sort
-$(SORTED_DIR)/%_sorted.bam : $(SAM_DIR)/%.sam.gz
-	@ samtools view -bS $(SAM_DIR)/$*.sam.gz | samtools sort -n - $(SORTED_DIR)/$*_sorted
+$(SORTED_DIR)/%_sorted.bam : $(SORTED_DIR)/%.sam.gz
+	@ samtools view -bS $(SORTED_DIR)/$*.sam.gz | samtools sort -n - $(SORTED_DIR)/$*_sorted
 # Convert .bam sorted to .sam
 $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 	@ samtools view $(SORTED_DIR)/$*_sorted.bam -h > $(SORTED_DIR)/$*_sorted.sam
@@ -70,7 +68,7 @@ $(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(PAIRED_DIR)/.d
 # Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DIR)/.d
 	@ gunzip $(PAIRED_DIR)/*.sam.gz 
-	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19_refseq.gtf | gzip > $@
+	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/listeria_monocytogenes_j0161_8_transcripts.gtf | gzip > $@
 	@ gzip $(PAIRED_DIR)/*.sam
 
 
@@ -103,9 +101,9 @@ $(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_
 	@ touch $@
 
 
+
 # Delete everything
 clean:
-	rm -r -f $(TRIM_DIR)
 	rm -r -f $(SORTED_DIR)
 	rm -r -f $(PAIRED_DIR)
 	rm -r -f $(COUNTS_DIR)
