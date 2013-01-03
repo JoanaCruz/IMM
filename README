@@ -2,9 +2,28 @@ To run this:
 
 1. Edit the Makefile to make sure ``READS_DIR`` points to the directory where
 the raw reads are.
-2. Run the following::
 
-    mkdir Genome
-    cd Genome
-    wget ftp://ftp.cbcb.umd.edu/pub/data/bowtie2_indexes/incl/hg19.zip
-    unzip hg19.zip
+2. Download Bowtie2 to the same folder where "IMM" folder is.
+
+3. Depending on the desired analysis, run the following::
+3.1. Human Genome (without mitocondrial DNA)
+	cd Genome
+	wget ftp://ftp.cbcb.umd.edu/pub/data/bowtie2_indexes/incl/hg19.1.zip
+	wget ftp://ftp.cbcb.umd.edu/pub/data/bowtie2_indexes/incl/hg19.2.zip
+	wget ftp://ftp.cbcb.umd.edu/pub/data/bowtie2_indexes/incl/hg19.3.zip
+	unzip *.zip
+	cd ../Human_DNA
+	make 
+
+3.2. Human mitocondrial DNA
+	cd Mitocondrial_DNA
+	make
+
+3.3. Listeria RNA
+	cd Genome	
+	wget http://www.broadinstitute.org/annotation/genome/listeria_group/download/?sp=EATranscriptsFasta&sp=SLM_J0161_V8&sp=S.zip
+	wget http://www.broadinstitute.org/annotation/genome/listeria_group/download/?sp=EATranscriptsGtf&sp=SLM_J0161_V8&sp=S.zip
+	unzip *.zip
+	../bowtie2-2.0.0-beta7/bowtie2-build listeria_monocytogenes_j0161_8_transcripts.fasta listeria_transcripts_j0161
+	cd ../Listeria_RNA
+	make
