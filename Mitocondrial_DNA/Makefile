@@ -4,7 +4,7 @@ AREF=../Genome
 # Main directories
 HUMAN_DIR=../Human_DNA
 LIST_DIR=../Listeria_RNA
-MIT_DIR=Mitocondrial_DNA
+MIT_DIR=.
 READS_DIR =/data/reads
 BOWTIE_DIR=../../bowtie2-2.0.0-beta7
 SCRIPT_DIR=../Scripts
@@ -83,7 +83,7 @@ $(COUNTS_DIR)/LM_HeLa_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR
 
 
 # Do differencial expression analysis (using DESeq)
-$(DESEQ_DIR)/DESeq_LM_HeLa_pvalue.csv.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/.d
+$(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/.d
 	@ gunzip $(COUNTS_DIR)/LM_HeLa_$*.txt.gz
 	@ Rscript $(SCRIPT_DIR)/DEseq.R $(COUNTS_DIR)/LM_HeLa_$*.txt $* $(DESEQ_DIR)/
 	@ gzip $(DESEQ_DIR)/*.csv
