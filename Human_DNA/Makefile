@@ -60,7 +60,7 @@ $(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz 
 
 # Filter paired end reads which only one align
 $(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(PAIRED_DIR)/.d
-	@ python $(SCRIPT_DIR)/paired_end.py $(SORTED_DIR)/ $*$(PAIRED_DIR)/
+	@ python $(SCRIPT_DIR)/paired_end.py $(SORTED_DIR)/ $* $(PAIRED_DIR)/
 	@ echo "Reads filtered."
 
 
