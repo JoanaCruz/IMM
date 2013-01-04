@@ -2,15 +2,15 @@
 AREF=../Genome
 
 # Main directories
-HUMAN_DIR=Human_DNA
-LIST_DIR=Listeria_RNA
-MIT_DIR=Mitocondrial_DNA
+HUMAN_DIR=../Human_DNA
+LIST_DIR=.
+MIT_DIR=../Mitocondrial_DNA
 READS_DIR =/data/reads
 BOWTIE_DIR=../../bowtie2-2.0.0-beta7
 
 #Auxiliary directories
 TRIM_DIR=$(HUMAN_DIR)/trim
-SORTED_DIR=$(LIST_DIR)/align&sorted_list
+SORTED_DIR=$(LIST_DIR)/align&sort_list
 PAIRED_DIR=$(LIST_DIR)/paired_reads_list
 COUNTS_DIR=$(LIST_DIR)/counts_list
 DESEQ_DIR=$(LIST_DIR)/DESeq_list

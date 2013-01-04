@@ -2,8 +2,8 @@
 AREF=../Genome
 
 # Main directories
-HUMAN_DIR=Human_DNA
-LIST_DIR=Listeria_RNA
+HUMAN_DIR=../Human_DNA
+LIST_DIR=../Listeria_RNA
 MIT_DIR=Mitocondrial_DNA
 READS_DIR =/data/reads
 BOWTIE_DIR=../../bowtie2-2.0.0-beta7
@@ -11,13 +11,13 @@ SCRIPT_DIR=../Scripts
 
 #Auxiliary directories
 TRIM_DIR=$(HUMAN_DIR)/trim
-SORTED_DIR=$(HUMAN_DIR)/align&sorted_list
-PAIRED_DIR=$(HUMAN_DIR)/paired_reads_list
-COUNTS_DIR=$(MIT_DIR)/counts_list
-DESEQ_DIR=$(MIT_DIR)/DESeq_list
-GO_DIR=$(MIT_DIR)/GOStats_list
+SORTED_DIR=$(HUMAN_DIR)/align&sort
+PAIRED_DIR=$(HUMAN_DIR)/paired_reads
+COUNTS_DIR=$(MIT_DIR)/counts_mit
+DESEQ_DIR=$(MIT_DIR)/DESeq_mit
+GO_DIR=$(MIT_DIR)/GOStats_mit
 
-GTF_FILE := $(AREF)/hg19_refseq.gtf
+GTF_FILE := $(AREF)/Esembl_MIT.gtf
 
 all: gostats
 

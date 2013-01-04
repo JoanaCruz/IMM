@@ -2,7 +2,7 @@
 AREF=../Genome
 
 # Main directories
-HUMAN_DIR=Human_DNA
+HUMAN_DIR=.
 LIST_DIR=Listeria_RNA
 MIT_DIR=Mitocondrial_DNA
 READS_DIR =/data/reads
@@ -11,7 +11,7 @@ SCRIPT_DIR=../Scripts
 
 #Auxiliary directories
 TRIM_DIR=$(HUMAN_DIR)/trim
-SORTED_DIR=$(HUMAN_DIR)/align&sorted
+SORTED_DIR=$(HUMAN_DIR)/align&sort
 PAIRED_DIR=$(HUMAN_DIR)/paired_reads
 COUNTS_DIR=$(HUMAN_DIR)/counts
 DESEQ_DIR=$(HUMAN_DIR)/DESeq
@@ -21,9 +21,9 @@ GTF_FILE := $(AREF)/hg19_refseq.gtf
 
 all: gostats
 
-gostats: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+gostats: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz, .txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
-deseq: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq_LM, $(notdir $(subst L1_1.fq.gz,pvalue.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+deseq: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq_LM, $(notdir $(subst L1_1.fq.gz, pvalue.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 concatenate: $(addprefix $(COUNTS_DIR)/,$(subst LM1, LM, $(notdir $(subst L1_1.fq.gz,HeLa.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
