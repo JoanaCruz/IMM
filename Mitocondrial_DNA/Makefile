@@ -21,11 +21,11 @@ GTF_FILE := $(AREF)/Esembl_MIT.gtf
 
 all: gostats
 
-gostats: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+gostats: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 deseq: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq_LM, $(notdir $(subst L1_1.fq.gz,pvalue.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
-concatenate: $(addprefix $(COUNTS_DIR)/,$(subst LM1, LM, $(notdir $(subst L1_1.fq.gz,HeLa.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+concatenate: $(addprefix $(COUNTS_DIR)/,$(subst LM1, LM, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 counts: $(addprefix $(COUNTS_DIR)/,$(addsuffix .txt.gz, $(notdir $(subst _1.fq.gz,, $(wildcard $(READS_DIR)/*_1.fq.gz)))))
 
@@ -42,26 +42,23 @@ $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 	@ echo "Bases trimmed."
 
 
-# Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
-$(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SORTED_DIR)/.d
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
-	@ echo "Alignment done."
-
-# Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
-$(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SORTED_DIR)/.d
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
-	@ echo "Alignment done."
 ### Arrange SAM files.
 
-## Sort the SAM file by read name (to use in HTSeq) unzip
-# Convert .sam to .bam and sort
-$(SORTED_DIR)/%_sorted.bam : $(SORTED_DIR)/%.sam.gz
-	@ samtools view -bS $(SORTED_DIR)/$*.sam.gz | samtools sort -n - $(SORTED_DIR)/$*_sorted
 # Convert .bam sorted to .sam
 $(SORTED_DIR)/%_sorted.sam.gz : $(SORTED_DIR)/%_sorted.bam
 	@ samtools view $(SORTED_DIR)/$*_sorted.bam -h > $(SORTED_DIR)/$*_sorted.sam
 	@ gzip $(SORTED_DIR)/$*_sorted.sam
 	@ echo "SAM file sorted."
+
+## Sort the SAM file by read name (to use in HTSeq) unzip
+# Convert .sam to .bam and sort
+$(SORTED_DIR)/%_sorted.bam : $(SORTED_DIR)/%.sam.gz
+	@ samtools view -bS $(SORTED_DIR)/$*.sam.gz | samtools sort -n - $(SORTED_DIR)/$*_sorted
+
+# Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
+$(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SORTED_DIR)/.d
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/hg19 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
+	@ echo "Alignment done."
 
 
 # Filter paired end reads which only one align
