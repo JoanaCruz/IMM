@@ -15,7 +15,7 @@ library("xtable")
 ###################################################
 ### Load data
 ###################################################
-data <- read.table(args[1], header=T, sep=" ", row.names=1)
+data <- read.csv(file=args[1], head=TRUE, sep=",", row.names=1)
 genes_refseq=as.character(data$id)
 
 ###################################################
