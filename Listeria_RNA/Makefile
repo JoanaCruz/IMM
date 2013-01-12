@@ -11,7 +11,7 @@ SCRIPT_DIR=../Scripts
 
 #Auxiliary directories
 TRIM_DIR=$(HUMAN_DIR)/trim
-SORTED_DIR=$(LIST_DIR)/align&sort_list
+SORTED_DIR=$(LIST_DIR)/alignsort_list
 PAIRED_DIR=$(LIST_DIR)/paired_reads_list
 COUNTS_DIR=$(LIST_DIR)/counts_list
 DESEQ_DIR=$(LIST_DIR)/DESeq_list
@@ -57,7 +57,7 @@ $(SORTED_DIR)/%_sorted.bam : $(SORTED_DIR)/%.sam.gz
 
 # Make sequences alignment with the human genome (using Bowtie2 with --sensitive option and with all paired ends that aligned written at .sam)
 $(SORTED_DIR)/%.sam.gz :  $(TRIM_DIR)/%_1_trimmed.gz $(TRIM_DIR)/%_2_trimmed.gz | $(SORTED_DIR)/.d
-	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/listeria_transcripts_j0161 --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
+	$(BOWTIE_DIR)/bowtie2 -x $(AREF)/listeria-EGDe --sensitive -1 $(TRIM_DIR)/$*_1_trimmed.gz -2 $(TRIM_DIR)/$*_2_trimmed.gz | gzip > $(SORTED_DIR)/$*.sam.gz
 	@ echo "Alignment done."
 
 
