@@ -21,9 +21,6 @@ the raw reads are.
 
 3.3. Listeria RNA
 	cd Genome	
-	wget http://www.broadinstitute.org/annotation/genome/listeria_group/download/?sp=EATranscriptsFasta&sp=SLM_J0161_V8&sp=S.zip
-	wget http://www.broadinstitute.org/annotation/genome/listeria_group/download/?sp=EATranscriptsGtf&sp=SLM_J0161_V8&sp=S.zip
-	unzip *.zip
-	../bowtie2-2.0.0-beta7/bowtie2-build listeria_monocytogenes_j0161_8_transcripts.fasta listeria_transcripts_j0161
+	../bowtie2-2.0.0-beta7/bowtie2-build listeria.EGDe.fasta listeria-EGDe
 	cd ../Listeria_RNA
 	make
