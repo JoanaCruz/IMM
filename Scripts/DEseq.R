@@ -47,11 +47,11 @@ res_down=resp[ order( resp$foldChange, -resp$baseMean ), ]
 
 res_up=resp[ order( -resp$foldChange, -resp$baseMean ), ]
 
-write.csv(res_pvalue, file = sprintf("%sDESeq_LM_HeLa_%s_pvalue.txt", args[3], args[2]))
+write.csv(res_pvalue, file = sprintf("%sDESeq_LM_HeLa_%s_pvalue.csv", args[3], args[2]))
 
-write.csv(res_up, file = sprintf("%sDESeq_LM_HeLa_%s_up.txt", args[3], args[2]))
+write.csv(res_up, file = sprintf("%sDESeq_LM_HeLa_%s_up.csv", args[3], args[2]))
 
-write.csv(res_down, file = sprintf("%sDESeq_LM_HeLa_%s_down.txt", args[3], args[2]))
+write.csv(res_down, file = sprintf("%sDESeq_LM_HeLa_%s_down.csv", args[3], args[2]))
 
-write.csv(res, file = sprintf("%sDESeq_LM_HeLa_%s_ALL.txt", args[3], args[2]))
+write.csv(res, file = sprintf("%sDESeq_LM_HeLa_%s_ALL.csv", args[3], args[2]))
 
