@@ -65,7 +65,7 @@ entrezUniverse <- as.list(org.Hs.egREFSEQ2EG)
 ###################################################
 ### HyperGeo
 ###################################################
-hgCutoff <- 0.01
+hgCutoff <- 0.05
 
 ontologies = c('MF', 'BP', 'CC')
 for (ont in ontologies) {
