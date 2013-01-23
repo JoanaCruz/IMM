@@ -89,5 +89,20 @@ hgOver <- hyperGTest(params)
 ### summary
 ###################################################
 df <- summary(hgOver)
+
+goterms <- df[,1]
+i=1
+genes_ids <- c()
+
+while (i <= length(goterms)){
+	genes_ids <- c(genes_ids ,geneIdsByCategory(hgOver, goterms[i]))
+	i <- i+1
+}
+
+df$genes.Entrez.Ids <- genes_ids
+
+df$genes.Entrez.Ids <- sapply(df$genes.Entrez.Ids, FUN = paste, collapse = " ")
+
 write.csv(df, file = sprintf("%sGOsummary_%s_%s.csv", args[3], ont, args[2]))
+
 }
