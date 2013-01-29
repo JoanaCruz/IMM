@@ -18,6 +18,7 @@ library("xtable")
 data <- read.csv(file=args[1], head=TRUE, sep=",", row.names=1)
 genes_refseq=as.character(data$id)
 
+
 ###################################################
 ### Filtering-noEntrez
 ###################################################
@@ -85,6 +86,7 @@ paramsCond <- params
 ###################################################
 hgOver <- hyperGTest(params)
 
+
 ###################################################
 ### summary
 ###################################################
@@ -99,10 +101,25 @@ while (i <= length(goterms)){
 	i <- i+1
 }
 
-df$genes.Entrez.Ids <- genes_ids
 
-df$genes.Entrez.Ids <- sapply(df$genes.Entrez.Ids, FUN = paste, collapse = " ")
+## Convert data to EntrezId
+for(i in 1:length(genes_ids)){
+	genes_refseq=c()
+	if(length(genes_ids[[i]]>0)){
+		for(j in 1:length(genes_ids[[i]])){
+			genes_refseq=c(genes_refseq,get(genes_ids[[i]][j],org.Hs.egREFSEQ))
+		}
+	}
+	genes_ids[[i]]=genes_refseq
+}
 
+## Add column with genes (RefSeq annotation) 
+df$genes_RefSeq <- genes_ids
+
+df$genes_RefSeq <- sapply(df$genes_RefSeq, FUN = paste, collapse = " ")
+
+
+## Write table
 write.csv(df, file = sprintf("%sGOsummary_%s_%s.csv", args[3], ont, args[2]))
 
 }
