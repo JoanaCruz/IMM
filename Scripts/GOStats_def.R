@@ -107,7 +107,10 @@ for(i in 1:length(genes_ids)){
 	genes_refseq=c()
 	if(length(genes_ids[[i]]>0)){
 		for(j in 1:length(genes_ids[[i]])){
-			genes_refseq=c(genes_refseq,get(genes_ids[[i]][j],org.Hs.egREFSEQ))
+			all_refseq = get(genes_ids[[i]][j],org.Hs.egREFSEQ)
+			mrna_refseq_table = grep("NM", as.character(all_refseq))
+			mrna_refseq=all_refseq[mrna_refseq_table]
+			genes_refseq = c(genes_refseq, mrna_refseq)
 		}
 	}
 	genes_ids[[i]]=genes_refseq
