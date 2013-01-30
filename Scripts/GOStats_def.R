@@ -119,7 +119,7 @@ for(i in 1:length(genes_ids)){
 ## Add column with genes (RefSeq annotation) 
 df$genes_RefSeq <- genes_ids
 
-df$genes_RefSeq <- sapply(df$genes_RefSeq, FUN = paste, collapse = " ")
+df$genes_RefSeq <- sapply(df$genes_RefSeq, FUN = paste, collapse = ", ")
 
 
 ## Write table
