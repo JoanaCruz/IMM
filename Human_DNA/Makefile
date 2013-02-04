@@ -114,7 +114,7 @@ $(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(C
 	@ gzip $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM$*_HeLa_*_L1.txt
 # Gene expression graphics
 	@ gunzip $(GO_DIR)/*.csv.gz
-	@ Rscript $(PLOTM_DIR)/heatmap.R  $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO_DIR)/
+	@ Rscript $(PLOTM_DIR)/heatmap.R  $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO_DIR)/ LM$*
 	@ Rscript $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO_DIR)/ LM$* $(GO_FILES)
 	@ gzip $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(GO_DIR)/*
 
