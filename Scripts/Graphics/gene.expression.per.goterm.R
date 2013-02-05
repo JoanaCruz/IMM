@@ -1,8 +1,7 @@
 ## Load data
 args <- commandArgs(TRUE)
-#args <- c("LM1_HeLa_all_timep_final.txt", "exp/", "LM1", c("GOsummary_BP_120.csv"))
-count_table = read.table(file = args[1], header=TRUE, row.names=1)
 
+count_table = read.table(file = args[1], header=TRUE, row.names=1)
 
 library( "DESeq" )
 
@@ -47,54 +46,61 @@ geneExpressionPlot <- function ( gotable, count_table, goname){
 	goterms=as.list(gotable[1])
 	if ( length(genes) > 30 ) { sizeGenes=30 } else { sizeGenes=length(genes) }
 	for ( i in 1:sizeGenes){
+		# string with genes seperated by ", "
 		splitData=strsplit(as.character(genes[i]),", ")
+		#number os genes to goterm i
 		length_splitdata=length(splitData[[1]])
 		sum=length_splitdata%%2
 		gosplit=strsplit(as.character(goname),"_")
 		go_ont=gosplit[[1]][2]
 		go_timep=strsplit(as.character(gosplit[[1]][3]),"[.]")[[1]][1]
+		# if number of genes is minor than 10 we only need one plot
 		if(length_splitdata<10){
-		png(filename= sprintf("%s%s/%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i])) 
-		if (length_splitdata==2){
-			par(mfrow=c(2,1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
-		}
-		else if (length_splitdata!=1){
-			par(mfrow=c((length_splitdata+sum)/2,2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
-		}
-		for( j in 1:length_splitdata){
+			png(filename= sprintf("%s%s/%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i])) 
+			if (length_splitdata==2){
+				par(mfrow=c(2,1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+			}
+			else if (length_splitdata>1){
+				par(mfrow=c((length_splitdata+sum)/2,2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+			}
+			for( j in 1:length_splitdata){
 				plotExpression(splitData[[1]][j], count_table)
+			}
+			mtext("Time-points [min]", side=1, outer=TRUE)
+			mtext("Nb counts normalized", side=2, outer=TRUE)
+			dev.off()
 		}
-		mtext("Time-points [min]", side=1, outer=TRUE)
-		mtext("Nb counts normalized", side=2, outer=TRUE)
-		dev.off()
-		}
-		if(length_splitdata>10){
+		
+		# if the numebr of genes is greater than 10 it is needed to do more plots (each plot has 10 entries) 
+		else if(length_splitdata>10){
 		length_splitdata_var=length_splitdata/10
 		pos=1
-		while (length_splitdata_var > 0){
+		while (length_splitdata_var != 0){
 			if(length_splitdata_var > 1){
 				png(filename= sprintf("%s%s/%s_%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i], ceiling(length_splitdata_var)))
 				par(mfrow=c(5,2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+				
 				for( j in pos:(pos+9)){
 					plotExpression(splitData[[1]][j], count_table)
-					print(j)
 				}
+				
 				mtext("Time-points [min]", side=1, outer=TRUE)
 				mtext("Nb counts normalized", side=2, outer=TRUE)
 				dev.off()
-				pos=pos+9
-				print(pos)
+				pos=pos+10
 				length_splitdata_var=length_splitdata_var-1
 			}
 			else{
-				sum=length_splitdata_var%%2
 				png(filename= sprintf("%s%s/%s_%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i], ceiling(length_splitdata_var)))
-				#print((length_splitdata_var*10+sum)/2)
-				par(mfrow=c((length_splitdata_var*10+sum)/2,2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
-				for( j in pos:length_splitdata){
-				plotExpression(splitData[[1]][j], count_table)
+				if ((length_splitdata_var*10)=="2"){	
+					par(mfrow=c(2,1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
 				}
-				print(pos)
+				else if ((length_splitdata_var*10)>"1"){
+					par(mfrow=c(round((length_splitdata_var*10+sum)/2),2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+				}	
+				for( j in pos:length_splitdata){
+					plotExpression(splitData[[1]][j], count_table)
+				}
 				mtext("Time-points [min]", side=1, outer=TRUE)
 				mtext("Nb counts normalized", side=2, outer=TRUE)
 				dev.off()
@@ -104,7 +110,6 @@ geneExpressionPlot <- function ( gotable, count_table, goname){
 	}
 	}
 }
-geneExpressionPlot(gotable, normalized, "GOsummary_BP_120.csv"
 
 for( i in 4:length(args)){
 	gotable = read.csv(file = args[i], header=TRUE, row.names=1)
