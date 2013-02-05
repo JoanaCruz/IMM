@@ -1,5 +1,6 @@
 ## Load data
 args <- commandArgs(TRUE)
+#args <- c("LM1_HeLa_all_timep_final.txt", "exp/", "LM1", c("GOsummary_BP_20.csv"))
 count_table = read.table(file = args[1], header=TRUE, row.names=1)
 
 
@@ -35,7 +36,7 @@ plotExpression <- function ( gene, table ){
 	pos = row.names(table) == gene
 	time_counts = as.matrix(table[pos,])
 	y = c(0,20,60,120,240)
-	plot(y,time_counts, xlab=NA, ylab=NA, main=gene, xlim=c(0,250), pch=19, col="blue")
+	plot(y,time_counts, xlab=NA, ylab=NA, main=gene, xlim=c(0,245), pch=19, col="blue")
 	lines(y,time_counts)
 }
 
@@ -49,13 +50,16 @@ geneExpressionPlot <- function ( gotable, count_table, goname){
 		splitData=strsplit(as.character(genes[i]),", ")
 		length_splitdata=length(splitData[[1]])
 		sum=length_splitdata%%2
-		if (length_splitdata!=1){
-			par(mfrow=c((length_splitdata+sum)/2,2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
-		}
 		gosplit=strsplit(as.character(goname),"_")
 		go_ont=gosplit[[1]][2]
 		go_timep=strsplit(as.character(gosplit[[1]][3]),"[.]")[[1]][1]
 		png(filename= sprintf("%s%s/%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i])) 
+		if (length_splitdata==2){
+			par(mfrow=c(2,1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+		}
+		else if (length_splitdata!=1){
+			par(mfrow=c((length_splitdata+sum)/2,2), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+		}
 		for( j in 1:length_splitdata){
 				plotExpression(splitData[[1]][j], count_table)
 		}

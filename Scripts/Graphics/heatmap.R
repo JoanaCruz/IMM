@@ -64,11 +64,11 @@ select = order(rowMeans(counts(data)), decreasing=TRUE)[1:30]
 hmcol = colorRampPalette(brewer.pal(9, "GnBu"))(100)
 
 ## Heatmap after VST
-png(filename= sprintf("%sHeatmap.with.vst.data.(30 genes).png", args[2]))
+png(filename= sprintf("%s%sHeatmap.with.vst.data.(30 genes).png", args[2], args[3]))
 heatmap.2(vds[select,], col = hmcol, trace="none", margin=c(10, 6))
 dev.off()
 
 ## Heatmap before VST
-png(filename= sprintf("%sHeatmap.without.vst.data.(30 genes).png", args[2]))
+png(filename= sprintf("%s%sHeatmap.without.vst.data.(30 genes).png", args[2],args[3]))
 heatmap.2(counts(data)[select,], col = hmcol, trace="none", margin=c(10,6))
 dev.off()
