@@ -1,6 +1,6 @@
 ## Load data
-args <- commandArgs(TRUE)
-
+#args <- commandArgs(TRUE)
+args=c("LM1_HeLa_all_timep.txt", "exp/", "LM1", "GOsummary_BP_120.csv")
 count_table = read.table(file = args[1], header=TRUE, row.names=1)
 
 library( "DESeq" )
@@ -55,13 +55,13 @@ geneExpressionPlot <- function ( gotable, count_table, goname){
 		go_ont=gosplit[[1]][2]
 		go_timep=strsplit(as.character(gosplit[[1]][3]),"[.]")[[1]][1]
 		# if number of genes is minor than 10 we only need one plot
-		if(length_splitdata<15){
+		if(length_splitdata<20){
 			png(filename= sprintf("%s%s/%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i])) 
 			if (length_splitdata==2){
 				par(mfrow=c(2,1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
 			}
 			else if (length_splitdata>1){
-				par(mfrow=c(ceiling((length_splitdata)/3),3), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+				par(mfrow=c(ceiling((length_splitdata)/4),4), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
 			}
 			for( j in 1:length_splitdata){
 				plotExpression(splitData[[1]][j], count_table)
@@ -72,31 +72,31 @@ geneExpressionPlot <- function ( gotable, count_table, goname){
 		}
 		
 		# if the numebr of genes is greater than 10 it is needed to do more plots (each plot has 10 entries) 
-		else if(length_splitdata>15){
-		length_splitdata_var=length_splitdata/15
+		else if(length_splitdata>20){
+		length_splitdata_var=length_splitdata/20
 		pos=1
 		while (length_splitdata_var != 0){
 			if(length_splitdata_var > 1){
 				png(filename= sprintf("%s%s/%s_%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i], ceiling(length_splitdata_var)))
-				par(mfrow=c(5,3), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+				par(mfrow=c(5,4), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
 				
-				for( j in pos:(pos+14)){
+				for( j in pos:(pos+19)){
 					plotExpression(splitData[[1]][j], count_table)
 				}
 				
 				mtext("Time-points [min]", side=1, outer=TRUE)
 				mtext("Nb counts normalized", side=2, outer=TRUE)
 				dev.off()
-				pos=pos+15
+				pos=pos+20
 				length_splitdata_var=length_splitdata_var-1
 			}
 			else{
 				png(filename= sprintf("%s%s/%s_%s_%s_%s_%s.png", args[2], args[3], args[3], go_ont, go_timep, goterms[[1]][i], ceiling(length_splitdata_var)))
-				if ((length_splitdata_var*15)=="2"){	
-					par(mfrow=c(2,1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+				if (length_splitdata_var*20 <= 5){	
+					par(mfrow=c(ceiling(length_splitdata_var*20),1), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
 				}
-				else if ((length_splitdata_var*15)>"1"){
-					par(mfrow=c(ceiling((length_splitdata_var*15)/3),3), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
+				else if ((length_splitdata_var*20)>"1"){
+					par(mfrow=c(ceiling((length_splitdata_var*20)/4),4), oma = c(1.5,1.5,0,0), mar = c(2.5,2.5,1.5,0.5))
 				}	
 				for( j in pos:length_splitdata){
 					plotExpression(splitData[[1]][j], count_table)
