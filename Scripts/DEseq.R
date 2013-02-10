@@ -24,7 +24,7 @@ data = newCountDataSet(count_table, conditions)
 
 data = estimateSizeFactors(data)
 
-write(sizeFactors(data),file=sprintf("LM_HeLa_%s.txt",args[2]))
+#write(sizeFactors(data),file=sprintf("LM_HeLa_%s.txt",args[2]))
 
 # 2. VARIANCE
 
