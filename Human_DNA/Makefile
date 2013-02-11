@@ -21,10 +21,8 @@ GO_DIR=$(HUMAN_DIR)/GOStats
 
 # Graphics
 PLOT_DIR=$(HUMAN_DIR)/Plots
-PLOT_DESEQ_DIR=$(PLOT_DIR)/DESeq.analysis
-PLOT_GO_DIR=$(PLOT_DIR)/Genes.per.goterm
-PLOT_GO_LM1=$(PLOT_GO_DIR)/LM1
-PLOT_GO_LM2=$(PLOT_GO_DIR)/LM2
+PLOT_DESEQ=$(PLOT_DIR)/DESeq.analysis
+PLOT_GO=$(PLOT_DIR)/Genes.expression
 
 GTF_FILE := $(AREF)/hg19_refseq.gtf
 
@@ -83,8 +81,7 @@ $(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DI
 # Concatenate files from HTSeq-count (same timepoint diferent condition)
 $(COUNTS_DIR)/LM_HeLa_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR)/LM2_HeLa_%_L1.txt.gz 
 	@ gunzip $(COUNTS_DIR)/LM*_HeLa_$*_L1.txt.gz
-	@ join -t "`/bin/echo -e '\t'`" --head $(COUNTS_DIR)/LM1_HeLa_$*_L1.txt $(COUNTS_DIR)/LM2_HeLa_$*_L1.txt > $(COUNTS_DIR)/LM_HeLa_$*.txt
-	@ sed -i '1s/^/LM1_HeLa_'$*'\tLM2_HeLa_'$*'\n/' $(COUNTS_DIR)/LM_HeLa_$*.txt
+	@ paste $(COUNTS_DIR)/LM1_HeLa_$*_L1.txt $(COUNTS_DIR)/LM2_HeLa_$*_L1.txt | cut -f1,2,4- | sed '1 i\LM1_HeLa_'$*'\tLM2_HeLa_'$*'' > $(COUNTS_DIR)/LM_HeLa_$*.txt
 	@ gzip $(COUNTS_DIR)/*.txt
 
 
@@ -107,15 +104,15 @@ plot: $(addprefix $(COUNTS_DIR)/, $(notdir $(subst 20_L1_1.fq.gz,all_timep.txt.g
 
 GO_FILES := $(basename $(wildcard $(GO_DIR)/*.csv.gz))
 
-# Concatenate files with the same condition (LM1 or LM2), do heatmap with the most differential expressed genes and do plots of gene expression variation for each one of the goterms.
-$(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(COUNTS_DIR)/Control_HeLa_L1.txt.gz | $(PLOT_GO_LM1)/.d $(PLOT_DESEQ_DIR)/.d $(PLOT_GO_LM2)/.d 
+# Concatenate files with the same condition (LM1 or LM2), do heatmap for the most differential expressed genes and do plots of gene expression variation.
+$(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(COUNTS_DIR)/Control_HeLa_L1.txt.gz | $(PLOT_GO)/.d $(PLOT_DESEQ)/.d
 	@ gunzip $(COUNTS_DIR)/Control_HeLa_L1.txt.gz $(COUNTS_DIR)/LM$*_HeLa_*_L1.txt.gz
 	@ paste $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM$*_HeLa_20_L1.txt $(COUNTS_DIR)/LM$*_HeLa_60_L1.txt $(COUNTS_DIR)/LM$*_HeLa_120_L1.txt $(COUNTS_DIR)/LM$*_HeLa_240_L1.txt | cut -f1,2,4,6,8,10- | sed '1 i\Control_HeLa\tLM'$*'_HeLa_20\tLM'$*'_HeLa_60\tLM'$*'_HeLa_120\tLM'$*'_HeLa_240' > $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt
 	@ gzip $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM$*_HeLa_*_L1.txt
 # Gene expression graphics
 	@ gunzip $(GO_DIR)/*.csv.gz
-	@ Rscript $(PLOTM_DIR)/heatmap.R  $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO_DIR)/ LM$*
-	@ Rscript $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO_DIR)/ LM$* $(GO_FILES)
+	@ Rscript $(PLOTM_DIR)/heatmap.R  $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ LM$*
+	@ Rscript $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ $(GO_FILES)
 	@ gzip $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(GO_DIR)/*
 
 # Create a directory (use DIR/.d)
