@@ -6,7 +6,7 @@ count_table = read.table(args[1], header=T, sep="\t", row.names=1)
 # define data design
 dataDesign = data.frame(
         row.names = colnames( count_table ),
-        condition = c( colnames( count_table )[1], colnames( count_table )[2]),
+        condition = colnames( count_table ),
         libType = c("paired-end","paired-end"))
 
 conditions=dataDesign$condition
@@ -47,11 +47,11 @@ res_down=resp[ order( resp$foldChange, -resp$baseMean ), ]
 
 res_up=resp[ order( -resp$foldChange, -resp$baseMean ), ]
 
-write.csv(res_pvalue, file = sprintf("%sDESeq_LM_HeLa_%s_pvalue.csv", args[3], args[2]))
+write.csv(res_pvalue, file = sprintf("%sDESeq_LM%s_HeLa_%s_pvalue.csv", args[3], args[4], args[2]))
 
-write.csv(res_up, file = sprintf("%sDESeq_LM_HeLa_%s_up.csv", args[3], args[2]))
+write.csv(res_up, file = sprintf("%sDESeq_LM%s_HeLa_%s_up.csv", args[3], args[4], args[2]))
 
-write.csv(res_down, file = sprintf("%sDESeq_LM_HeLa_%s_down.csv", args[3], args[2]))
+write.csv(res_down, file = sprintf("%sDESeq_LM%s_HeLa_%s_down.csv", args[3], args[4], args[2]))
 
-write.csv(res, file = sprintf("%sDESeq_LM_HeLa_%s_ALL.csv", args[3], args[2]))
+write.csv(res, file = sprintf("%sDESeq_LM%s_HeLa_%s_ALL.csv", args[3], args[4], args[2]))
 
