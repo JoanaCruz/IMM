@@ -1,8 +1,10 @@
-LM_20 = read.table("DESeq_LM_HeLa_20_ALL.txt")
-LM_60 = read.table("DESeq_LM_HeLa_60_ALL.txt")
-LM_120 = read.table("DESeq_LM_HeLa_120_ALL.txt")
-LM_240 = read.table("DESeq_LM_HeLa_240_ALL.txt")
+args<-commandArgs(TRUE)
+#args=c("./","LM1","./")
 
+LM_20 = read.table(sprintf("%sDESeq_%s_HeLa_20_ALL.csv", args[1], args[2]), sep=",", header=TRUE)
+LM_60 = read.table(sprintf("%sDESeq_%s_HeLa_60_ALL.csv", args[1], args[2]), sep=",", header=TRUE)
+LM_120 = read.table(sprintf("%sDESeq_%s_HeLa_120_ALL.csv", args[1], args[2]), sep=",", header=TRUE)
+LM_240 = read.table(sprintf("%sDESeq_%s_HeLa_240_ALL.csv", args[1], args[2]), sep=",", header=TRUE)
 
 plotDE <- function( res )
    plot( 
@@ -11,16 +13,18 @@ plotDE <- function( res )
       log="x", pch=20, cex=.3, 
       col = ifelse( res$padj < .1, "red", "black" ) )
 
-
+png(filename= sprintf("%s%s_HeLa_deseq.png", args[3], args[2])) 
 par(mfrow=c(2,2))
 plotDE(LM_20)
-title(main="LM_20")
+title(main=sprintf("%s_20", args[2]))
 plotDE(LM_60)
-title(main="LM_60")
+title(main=sprintf("%s_60", args[2]))
 plotDE(LM_120)
-title(main="LM_120")
+title(main=sprintf("%s_120", args[2]))
 plotDE(LM_240)
-title(main="LM_240")
+title(main=sprintf("%s_240", args[2]))
+
+dev.off()
 #par(mfrow=c(4,1))
 
 #hist(LM_20$padj, breaks=100, col="skyblue", border="slateblue", main="")
