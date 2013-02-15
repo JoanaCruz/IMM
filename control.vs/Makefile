@@ -34,11 +34,11 @@ GTF_FILE := $(AREF)/hg19_refseq.gtf
 
 all: gostats
 
-gostats: $(addprefix $(GO_WILDTYPE_DIR)/,GOsummary_, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/*_1.fq.gz)))))
+gostats: $(addprefix $(GO_DIR)/GOsummary_, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/LM*_L1_1.fq.gz)))))
 
-deseq: $(addprefix $(DESEQ_DIR)/DESeq_, $(notdir $(subst L1_1.fq.gz,pvalue.csv.gz, $(wildcard $(READS_DIR)/*_1.fq.gz))))
+deseq: $(addprefix $(DESEQ_DIR)/DESeq_, $(notdir $(subst L1_1.fq.gz,pvalue.csv.gz, $(wildcard $(READS_DIR)/LM*_L1_1.fq.gz))))
 
-concatenate: $(addprefix $(COUNTS_CONTROL_DIR)/,$(notdir $(subst _L1_1.fq.gz,_control.txt.gz, $(wildcard $(READS_DIR)/*_1.fq.gz))))
+concatenate: $(addprefix $(COUNTS_CONTROL_DIR)/,$(notdir $(subst _L1_1.fq.gz,_control.txt.gz, $(wildcard $(READS_DIR)/LM*_L1_1.fq.gz))))
 
 counts: $(addprefix $(COUNTS_DIR)/, $(notdir $(subst _1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/*_1.fq.gz))))
 
@@ -102,8 +102,8 @@ $(DESEQ_DIR)/DESeq_%_pvalue.csv.gz : $(COUNTS_CONTROL_DIR)/%_control.txt.gz $(DE
 # GO annotation (using GOstats)
 $(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_%_pvalue.csv.gz $(GO_DIR)/.d
 	@ gunzip $(DESEQ_DIR)/DESeq_$*_pvalue.csv.gz 
-	@ Rscript $(SCRIPT_DIR)/GOStats_control.R $(DESEQ_DIR)/DESeq_$*_pvalue.csv $(GO_DIR)/
-	@ gzip $(GO_DIR)/* $(DESEQ_DIR)/DESeq_$*_pvalue.csv
+	Rscript $(SCRIPT_DIR)/GOStats_control.R $(DESEQ_DIR)/DESeq_$*_pvalue.csv $(GO_DIR)/
+	gzip $(GO_DIR)/* $(DESEQ_DIR)/DESeq_$*_pvalue.csv
 
 
 # Do web site to see gene expression
@@ -130,7 +130,7 @@ plot: $(addprefix $(COUNTS_DIR)/, $(notdir $(subst 20_L1_1.fq.gz,all_timep.txt.g
 GO_FILES := $(basename $(wildcard $(GO_DIR)/*.csv.gz))
 
 # Concatenate files with the same condition (LM1 or LM2), do heatmap with the most differential expressed genes and do plots of gene expression variation for each one of the goterms.
-$(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(COUNTS_DIR)/Control_HeLa_L1.txt.gz | $(PLOT_GO_WILDTYPE)/.d $(PLOT_DESEQ_DIR)/.d $(PLOT_GO_MUTANT)/.d 
+$(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_control.txt.gz $(COUNTS_DIR)/Control_HeLa_L1.txt.gz | $(PLOT_GO_WILDTYPE)/.d $(PLOT_DESEQ_DIR)/.d $(PLOT_GO_MUTANT)/.d 
 	@ gunzip $(COUNTS_DIR)/Control_HeLa_L1.txt.gz $(COUNTS_DIR)/LM$*_HeLa_*_L1.txt.gz
 	@ paste $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM$*_HeLa_20_L1.txt $(COUNTS_DIR)/LM$*_HeLa_60_L1.txt $(COUNTS_DIR)/LM$*_HeLa_120_L1.txt $(COUNTS_DIR)/LM$*_HeLa_240_L1.txt | cut -f1,2,4,6,8,10- | sed '1 i\Control_HeLa\tLM'$*'_HeLa_20\tLM'$*'_HeLa_60\tLM'$*'_HeLa_120\tLM'$*'_HeLa_240' > $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt
 	@ gzip $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM$*_HeLa_*_L1.txt

@@ -16,8 +16,10 @@ library("xtable")
 ### Load data
 ###################################################
 data <- read.csv(file=args[1], head=TRUE, sep=",", row.names=1)
+file_name = strsplit(args[1],'_')
+
 if(length(data$id)==0){
-	write("No differencially expressed genes", file = sprintf("%sNO_GOsummary_%s.txt", args[3], args[2]))
+	write("No differencially expressed genes", file = sprintf("%sNO_GOsummary_%s_%s.txt", args[2], file_name[[1]][2], file_name[[1]][4]))
 } else {
 
 genes_refseq=as.character(data$id)
@@ -124,11 +126,10 @@ for(i in 1:length(genes_ids)){
 df$genes_RefSeq <- genes_ids
 
 df$genes_RefSeq <- sapply(df$genes_RefSeq, FUN = paste, collapse = ", ")
-
-file_name = strsplit(as.character(args[2]),'_')
+print(strsplit(args[1],'_'))
 
 ## Write table
-write.csv(df, file = sprintf("%sGOsummary_%s_%s_%s.csv", args[3], file_name[[1]][1], ont, file_name[[1]][3]))
+write.csv(df, file = sprintf("%sGOsummary_%s_%s_%s.csv", args[2], file_name[[1]][2], ont, file_name[[1]][4]))
 
 }
 }
