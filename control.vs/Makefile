@@ -3,11 +3,13 @@ AREF=../Genome
 
 # Main directories
 HUMAN_DIR=../Human_DNA
-LIST_DIR=Listeria_RNA
-MIT_DIR=Mitocondrial_DNA
-CONTROL_DIR=control.vs
-READS_DIR =/data/reads
-BOWTIE_DIR=../../bowtie2-2.0.0-beta7
+LIST_DIR=../Listeria_RNA
+MIT_DIR=../Mitocondrial_DNA
+CONTROL_DIR=.
+WILDTYPE_DIR=$(CONTROL_DIR)/control.vs.wildtype
+MUTANT_DIR=$(CONTROL_DIR)/control.vs.mutant
+READS_DIR =/home/data/reads
+BOWTIE_DIR=/home/data/joanacruz/bowtie2-2.0.0-beta7
 SCRIPT_DIR=../Scripts
 PLOTM_DIR=../Scripts/Graphics
 
@@ -17,12 +19,16 @@ TRIM_DIR=$(HUMAN_DIR)/trim
 SORTED_DIR=$(HUMAN_DIR)/alignsort
 PAIRED_DIR=$(HUMAN_DIR)/paired_reads
 COUNTS_DIR=$(HUMAN_DIR)/counts
-DESEQ_WILDTYPE_DIR=$(CONTROL_DIR)/DESeq.wildtype
-DESEQ_MUTANT_DIR=$(CONTROL_DIR)/DESeq.mutant
-GO_DIR=$(CONTROL_DIR)/GOStats
+COUNTS_WILDTYPE_DIR=$(WILDTYPE_DIR)/counts.wildtype
+COUNTS_MUTANT_DIR=$(MUTANT_DIR)/counts.mutant
+DESEQ_WILDTYPE_DIR=$(WILDTYPE_DIR)/DESeq.wildtype
+DESEQ_MUTANT_DIR=$(MUTANT_DIR)/DESeq.mutant
+GO_WILDTYPE_DIR=$(WILDTYPE_DIR)/GOStats.wildtype
+GO_MUTANT_DIR=$(MUTANT_DIR)/GOStats.mutant
+
 
 # Graphics
-PLOT_DIR=$(MUTANT_DIR)/Plots
+PLOT_DIR=$(CONTROL_DIR)/Plots
 PLOT_DESEQ=$(PLOT_DIR)/DESeq.analysis
 PLOT_GO=$(PLOT_DIR)/Genes.expression
 
@@ -30,9 +36,9 @@ GTF_FILE := $(AREF)/hg19_refseq.gtf
 
 all: gostats
 
-gostats: $(addprefix $(GO_DIR)/,$(subst LM1_HeLa, GOsummary, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+gostats: $(addprefix $(GO_WILDTYPE_DIR)/,$(subst LM1_HeLa, GOsummary_LM1, $(notdir $(subst _L1_1.fq.gz,.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
-deseq: $(addprefix $(DESEQ_DIR)/,$(subst LM1, DESeq_LM, $(notdir $(subst L1_1.fq.gz,pvalue.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
+deseq: $(addprefix $(DESEQ_WILDTYPE_DIR)/,$(subst LM1, DESeq_LM1, $(notdir $(subst L1_1.fq.gz,pvalue.csv.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
 concatenate: $(addprefix $(COUNTS_DIR)/,$(subst LM1, LM, $(notdir $(subst _L1_1.fq.gz,.txt.gz, $(wildcard $(READS_DIR)/LM1_*_1.fq.gz)))))
 
@@ -45,7 +51,7 @@ sorted: $(addprefix $(SORTED_DIR)/,$(addsuffix _sorted.sam.gz, $(notdir $(subst 
 trim: $(addprefix $(TRIM_DIR)/,$(addsuffix _trimmed.gz,$(notdir $(basename $(basename $(wildcard $(READS_DIR)/*.fq.gz))))))
 
 
-# Make bases trim (delete first 15 bases from the beginning of the sequences)
+#Make bases trim (delete first 15 bases from the beginning of the sequences)
 $(TRIM_DIR)/%_trimmed.gz : $(READS_DIR)/%.fq.gz | $(TRIM_DIR)/.d
 	@ python $(SCRIPT_DIR)/trim.py $(READS_DIR)/ $* 15 $(TRIM_DIR)/ 
 	@ echo "Bases trimmed."
@@ -73,35 +79,46 @@ $(PAIRED_DIR)/%_paired.sam.gz : $(SORTED_DIR)/%_sorted.sam.gz | $(PAIRED_DIR)/.d
 	@ echo "Reads filtered."
 
 
-# Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
+#Uses HTSeq-count script to count how many reads map to each feature (being a feature a range of positions on a chromosome)
 $(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DIR)/.d
+	echo "htseq"
 	@ gunzip $(PAIRED_DIR)/*.sam.gz 
 	@ python -m HTSeq.scripts.count -m union -s no -i gene_id $(PAIRED_DIR)/$*_paired.sam $(AREF)/hg19_refseq.gtf | gzip > $@
 	@ gzip $(PAIRED_DIR)/*.sam
 
 
-# Concatenate files from HTSeq-count (same condition diferent timepoint)
-$(COUNTS_DIR)/LM1_HeLa_Control_%.txt.gz $(COUNTS_DIR)/LM2_HeLa_Control_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR)/LM2_HeLa_%_L1.txt.gz 
-	@ gunzip $(COUNTS_DIR)/LM*_HeLa_$*_L1.txt.gz
-	@ paste $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM1_HeLa_$*_L1.txt | cut -f1,2,4- | sed '1 i\Control_HeLa\tLM1_HeLa_'$*''> $(COUNTS_DIR)/LM1_HeLa_Control_$*.txt
-	@ paste $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM2_HeLa_$*_L1.txt | cut -f1,2,4- | sed '1 i\Control_HeLa\tLM2_HeLa_'$*''> $(COUNTS_DIR)/LM2_HeLa_Control_$*.txt
-	@ gzip $(COUNTS_DIR)/LM*_HeLa_Control_$*.txt $(COUNTS_DIR)/LM*_HeLa_$*_L1.txt
+# Concatenate files from HTSeq-count (control vs (LM1 or LM2) )
+$(COUNTS_WILDTYPE_DIR)/LM1_HeLa_Control_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR)/LM2_HeLa_%_L1.txt.gz | $(COUNTS_WILDTYPE_DIR)/.d $(COUNTS_MUTANT_DIR)/.d
+	@ gunzip $(COUNTS_DIR)/LM*_HeLa_$*_L1.txt.gz $(COUNTS_DIR)/Control_HeLa_L1.txt.gz
+	@ paste $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM1_HeLa_$*_L1.txt | cut -f1,2,4- | sed '1 i\Control_HeLa\tLM1_HeLa_'$*''> $(COUNTS_WILDTYPE_DIR)/LM1_HeLa_Control_$*.txt
+	@ paste $(COUNTS_DIR)/Control_HeLa_L1.txt $(COUNTS_DIR)/LM2_HeLa_$*_L1.txt | cut -f1,2,4- | sed '1 i\Control_HeLa\tLM2_HeLa_'$*''> $(COUNTS_MUTANT_DIR)/LM2_HeLa_Control_$*.txt
+	@ gzip $(COUNTS_WILDTYPE_DIR)/LM1_HeLa_Control_$*.txt $(COUNTS_MUTANT_DIR)/LM2_HeLa_Control_$*.txt $(COUNTS_DIR)/LM*_HeLa_$*_L1.txt $(COUNTS_DIR)/Control_HeLa_L1.txt
 
-
+	
 # Do differencial expression analysis between control and wildtype & between control and mutant (using DESeq)
-$(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_%_pvalue.csv.gz $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_%_pvalue.csv.gz : $(COUNTS_DIR)/LM1_Control_%_HeLa.txt.gz $(COUNTS_DIR)/LM2_Control_%_HeLa.txt.gz | $(DESEQ_MUTANT_DIR)/.d $(DESEQ_WILDTYPE_DIR)/.d
-	@ gunzip $(COUNTS_DIR)/LM1_HeLa_Control_$*.txt.gz $(COUNTS_DIR)/LM2_HeLa_Control_$*.txt.gz
-	@ Rscript $(SCRIPT_DIR)/DEseq_control.R $(COUNTS_DIR)/LM1_HeLa_Control_$*.txt $* $(DESEQ_WILDTYPE_DIR)/ 1
-	@ Rscript $(SCRIPT_DIR)/DEseq_control.R $(COUNTS_DIR)/LM2_HeLa_Control_$*.txt $* $(DESEQ_MUTANT_DIR)/ 2
-	@ gzip $(DESEQ_DIR)/*.csv
+$(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_%_pvalue.csv.gz : $(COUNTS_WILDTYPE_DIR)/LM1_HeLa_Control_%.txt.gz | $(WILDTYPE_DIR)/.d $(MUTANT_DIR)/.d $(DESEQ_MUTANT_DIR)/.d $(DESEQ_WILDTYPE_DIR)/.d
+	@ gunzip $(COUNTS_WILDTYPE_DIR)/LM1_HeLa_Control_$*.txt.gz $(COUNTS_MUTANT_DIR)/LM2_HeLa_Control_$*.txt.gz
+	@ Rscript $(SCRIPT_DIR)/DEseq_control.R $(COUNTS_WILDTYPE_DIR)/LM1_HeLa_Control_$*.txt $* $(DESEQ_WILDTYPE_DIR)/ 1
+	@ Rscript $(SCRIPT_DIR)/DEseq_control.R $(COUNTS_MUTANT_DIR)/LM2_HeLa_Control_$*.txt $* $(DESEQ_MUTANT_DIR)/ 2
+	@ gzip $(DESEQ_MUTANT_DIR)/DESeq_LM2*.csv $(DESEQ_WILDTYPE_DIR)/DESeq_LM1*.csv
 
 
 # GO annotation (using GOstats)
-$(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_DIR)/.d
-	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv.gz
-	@ Rscript $(SCRIPT_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv $* $(GO_DIR)/
-	@ gzip $(GO_DIR)/*.csv
-	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv
+$(GO_WILDTYPE_DIR)/GOsummary_LM1_%.csv.gz: $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_%_pvalue.csv.gz | $(GO_WILDTYPE_DIR)/.d $(GO_MUTANT_DIR)/.d
+	@ gunzip $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_$*_pvalue.csv.gz $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_$*_pvalue.csv.gz 
+	@ Rscript $(SCRIPT_DIR)/GOStats_control.R $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_$*_pvalue.csv $* $(GO_WILDTYPE_DIR)/ 1
+	@ Rscript $(SCRIPT_DIR)/GOStats_control.R $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_$*_pvalue.csv $* $(GO_MUTANT_DIR)/ 2
+	@ gzip $(GO_WILDTYPE_DIR)/* $(GO_MUTANT_DIR)/*
+	@ gzip $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_$*_pvalue.csv $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_$*_pvalue.csv
+
+
+plotdeseq: $(addprefix $(PLOT_DESEQ)/, $(notdir $(subst 20_L1_1.fq.gz,deseq.png, $(wildcard $(READS_DIR)/LM1_HeLa_20_L1_1.fq.gz))))
+
+$(PLOT_DESEQ)/LM1_HeLa_deseq.png : $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_20_ALL.csv.gz $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_20_ALL.csv.gz $(PLOT_DESEQ)/.d
+	@ gunzip $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_*_ALL.csv.gz $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_*_ALL.csv.gz
+	@ Rscript $(PLOTM_DIR)/deseq.analysis.R $(DESEQ_WILDTYPE_DIR)/ LM1 $(PLOT_DESEQ)/
+	@ Rscript $(PLOTM_DIR)/deseq.analysis.R $(DESEQ_MUTANT_DIR)/ LM2 $(PLOT_DESEQ)/
+	@ gzip $(DESEQ_WILDTYPE_DIR)/DESeq_LM1_HeLa_*_ALL.csv $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_*_ALL.csv
 
 
 plot: $(addprefix $(COUNTS_DIR)/, $(notdir $(subst 20_L1_1.fq.gz,all_timep.txt.gz, $(wildcard $(READS_DIR)/LM*_HeLa_20_L1_1.fq.gz))))
