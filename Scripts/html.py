@@ -9,21 +9,36 @@ if len(sys.argv) < 3:
 # Open the CSV file for reading
 reader = csv.reader(open(sys.argv[1]))
 
-web_dir=sys.argv[2]
+#folder where csv files are
+file_dir_name=sys.argv[1].split("/")
+#folder where html files will be saved
+file_out_dir=sys.argv[2]
+#name of the csv being read
+file_name=file_dir_name[2]
+# LM1 or LM2
+cond=file_name.split("_")[1]
+# folder where html of a certain condition will be saved
+web_dir=sys.argv[2]+cond+"/"
+# ontology
+ont=file_name.split("_")[2]
+# timepoint
+tp=file_name.split("_")[3].split(".")[0]
+# folder where html of a certain condition and ontology will be saved
+file_out=web_dir+ont
+
+
+#create folder for condition (LM1 or LM2)
+if not os.path.exists(web_dir):
+    os.makedirs(web_dir)
+
 #create first page1
 f1=open(web_dir+"page1.html", 'w+')
 
-f1.write('<html><head><title>Gene Expression profile</title></head><body><font size="5">Gene Expression profile - 7th February 2013</font> <br><br><font size="4">GO ontologies:</font><p> <a href="'+web_dir+'BP/pageBP_timepoints.html">Biological Processes</a></p><p> <a href="'+web_dir+'CC/pageCC_timepoints.html">Celular components</a></p><p><a href="'+web_dir+'MF/pageMF_timepoints.html">Molecular function</a></p></body></html>')
+f1.write('<html><head><title>Gene Expression profile</title></head><body><font size="5">Gene Expression profile - 7th February 2013</font> <br><br><font size="4">GO ontologies:</font><p> <a href="'+'BP/pageBP_timepoints.html">Biological Processes</a></p><p> <a href="'+'CC/pageCC_timepoints.html">Celular components</a></p><p><a href="'+'MF/pageMF_timepoints.html">Molecular function</a></p></body></html>')
 
 f1.close()
 
 # Create the HTML file for output
-file_dir_name=sys.argv[1].split("/")
-file_out_dir=sys.argv[2]
-file_name=file_dir_name[1]
-ont=file_name.split("_")[1]
-tp=file_name.split("_")[2].split(".")[0]
-file_out=file_out_dir+ont
 
 if not os.path.exists(file_out):
     os.makedirs(file_out)
