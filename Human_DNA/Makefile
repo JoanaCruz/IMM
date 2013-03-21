@@ -24,6 +24,12 @@ PLOT_DIR=$(HUMAN_DIR)/Plots
 PLOT_DESEQ=$(PLOT_DIR)/DESeq.analysis
 PLOT_GO=$(PLOT_DIR)/Genes.expression
 
+#website
+WEB_DIR=$(HUMAN_DIR)/web.site
+WEB_BP_DIR=$(WEB_DIR)/BP
+WEB_CC_DIR=$(WEB_DIR)/CC
+WEB_MF_DIR=$(WEB_DIR)/MF
+
 GTF_FILE := $(AREF)/hg19_refseq.gtf
 
 all: gostats
@@ -100,6 +106,14 @@ $(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_
 	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv
 
 
+plotdeseq: $(addprefix $(PLOT_DESEQ)/, $(notdir $(subst LM1,LM, $(subst 20_L1_1.fq.gz,deseq.png, $(wildcard $(READS_DIR)/LM1_HeLa_20_L1_1.fq.gz)))))
+
+$(PLOT_DESEQ)/LM_HeLa_deseq.png : $(DESEQ_WILDTYPE_DIR)/DESeq_LM_HeLa_20_ALL.csv.gz $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_20_ALL.csv.gz $(PLOT_DESEQ)/.d
+	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_*_ALL.csv.gz
+	@ Rscript $(PLOTM_DIR)/deseq.analysis.R $(DESEQ_DIR)/ LM $(PLOT_DESEQ)/
+	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_*_ALL.csv
+
+
 plot: $(addprefix $(COUNTS_DIR)/, $(notdir $(subst 20_L1_1.fq.gz,all_timep.txt.gz, $(wildcard $(READS_DIR)/LM*_HeLa_20_L1_1.fq.gz))))
 
 GO_FILES := $(basename $(wildcard $(GO_DIR)/*.csv.gz))
@@ -121,7 +135,37 @@ $(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(C
 	@ mkdir -p $(@D)
 	@ touch $@
 
+html:
+$(WEB_DIR)/page%.html : $(GO_DIR)/GOsummary_%.csv.gz
+	@ gunzip $(GO_DIR)/GOsummary_$*.csv.gz
+	@ python html.py $(GO_DIR)/GOsummary_$*.csv $(WEB_DIR)/page$*.html
+	@ python web.py $(WEB_DIR)/page$*.html $(WEB_
+	
+	
+script, file_read, out_dir,tp, ont, plot_dir =argv
 
+#file_read: Table from excell with the information of one time point, one ontology (in html format)
+#out_dir: Directory where html with plots will be saved.
+#plot_dir: Directory where are the gene expression plots.
+
+#web.py ./ pageBP_20_semplot.html ./ 20 BP ./
+	
+
+OUT = /out
+
+.PHONY: all 
+all: make_directories $(OUT)/foo.o
+
+$(OUT)/foo.o: foo.c 
+    @$(COMPILE.C) -o $@ $<
+
+.PHONY: make_directories 
+make_directories: $(OUT)/
+
+$(OUT)/:
+    mkdir -p $@
+	
+	
 # Delete everything
 clean:
 	rm -r -f $(TRIM_DIR)
