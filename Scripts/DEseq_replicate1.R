@@ -6,8 +6,8 @@ count_table = read.table(args[1], header=T, sep="\t", row.names=1)
 # define data design
 dataDesign = data.frame(
         row.names = colnames( count_table ),
-        condition = c( colnames( count_table )[1], colnames( count_table )[2]),
-        libType = c("paired-end","paired-end"))
+        condition = c( "Control_HeLa", "Control_HeLa", colnames( count_table )[3]),
+        libType = c("paired-end","paired-end","paired-end"))
 
 conditions=dataDesign$condition
 
@@ -34,10 +34,10 @@ write(sizeFactors(data),file=sprintf("LM_HeLa_%s.txt",args[2]))
 
 # estimateDispersions: First, it estimates a dispersion value for each gene, then it fits a curve through the estimates. Finally, it assigns to each gene a dispersion value, using a choice between the per-gene estimate and the fitted value.
 
-data = estimateDispersions( data, method="blind", sharingMode="fit-only" , fitType="parametric")
+data = estimateDispersions( data )
 
 # Now, we can attempt to find differential expression:
-res = nbinomTest( data, colnames( count_table )[1], colnames( count_table )[2] )
+res = nbinomTest( data, "Control_HeLa", colnames( count_table )[3] )
 
 resp=subset(res,res$padj<0.1)
 
