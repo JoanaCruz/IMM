@@ -23,12 +23,7 @@ GO_DIR=$(HUMAN_DIR)/GOStats
 PLOT_DIR=$(HUMAN_DIR)/Plots
 PLOT_DESEQ=$(PLOT_DIR)/DESeq.analysis
 PLOT_GO=$(PLOT_DIR)/Genes.expression
-
-#website
-WEB_DIR=$(HUMAN_DIR)/web.site
-WEB_BP_DIR=$(WEB_DIR)/BP
-WEB_CC_DIR=$(WEB_DIR)/CC
-WEB_MF_DIR=$(WEB_DIR)/MF
+PLOT_ALL=$(PLOT_DIR)/All.plots
 
 GTF_FILE := $(AREF)/hg19_refseq.gtf
 
@@ -87,14 +82,15 @@ $(COUNTS_DIR)/%.txt.gz : $(PAIRED_DIR)/%_paired.sam.gz $(GTF_FILE) | $(COUNTS_DI
 # Concatenate files from HTSeq-count (same timepoint diferent condition)
 $(COUNTS_DIR)/LM_HeLa_%.txt.gz : $(COUNTS_DIR)/LM1_HeLa_%_L1.txt.gz $(COUNTS_DIR)/LM2_HeLa_%_L1.txt.gz 
 	@ gunzip $(COUNTS_DIR)/LM*_HeLa_$*_L1.txt.gz
-	@ paste $(COUNTS_DIR)/LM1_HeLa_$*_L1.txt $(COUNTS_DIR)/LM2_HeLa_$*_L1.txt | cut -f1,2,4- | sed '1 i\LM1_HeLa_'$*'\tLM2_HeLa_'$*'' > $(COUNTS_DIR)/LM_HeLa_$*.txt
+	@ join -t "`/bin/echo -e '\t'`" --head $(COUNTS_DIR)/LM1_HeLa_$*_L1.txt $(COUNTS_DIR)/LM2_HeLa_$*_L1.txt > $(COUNTS_DIR)/LM_HeLa_$*.txt
+	@ sed -i '1s/^/LM1_HeLa_'$*'\tLM2_HeLa_'$*'\n/' $(COUNTS_DIR)/LM_HeLa_$*.txt
 	@ gzip $(COUNTS_DIR)/*.txt
 
 
 # Do differencial expression analysis (using DESeq)
-$(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz: $(COUNTS_DIR)/LM_HeLa_%.txt.gz | $(DESEQ_DIR)/.d
-	@ gunzip $(COUNTS_DIR)/LM_HeLa_$*.txt.gz
-	@ Rscript $(SCRIPT_DIR)/DEseq.R $(COUNTS_DIR)/LM_HeLa_$*.txt $* $(DESEQ_DIR)/
+$(DESEQ_DIR)/DESeq_%_pvalue.csv.gz: $(COUNTS_DIR)/%.txt.gz | $(DESEQ_DIR)/.d
+	@ gunzip $(COUNTS_DIR)/$*.txt.gz
+	@ Rscript $(SCRIPT_DIR)/DEseq.R $(COUNTS_DIR)/$*.txt $* $(DESEQ_DIR)/
 	@ gzip $(DESEQ_DIR)/*.csv
 
 
@@ -104,14 +100,6 @@ $(GO_DIR)/GOsummary_%.csv.gz: $(DESEQ_DIR)/DESeq_LM_HeLa_%_pvalue.csv.gz | $(GO_
 	@ Rscript $(SCRIPT_DIR)/GOStats_def.R $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv $* $(GO_DIR)/
 	@ gzip $(GO_DIR)/*.csv
 	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_$*_pvalue.csv
-
-
-plotdeseq: $(addprefix $(PLOT_DESEQ)/, $(notdir $(subst LM1,LM, $(subst 20_L1_1.fq.gz,deseq.png, $(wildcard $(READS_DIR)/LM1_HeLa_20_L1_1.fq.gz)))))
-
-$(PLOT_DESEQ)/LM_HeLa_deseq.png : $(DESEQ_WILDTYPE_DIR)/DESeq_LM_HeLa_20_ALL.csv.gz $(DESEQ_MUTANT_DIR)/DESeq_LM2_HeLa_20_ALL.csv.gz $(PLOT_DESEQ)/.d
-	@ gunzip $(DESEQ_DIR)/DESeq_LM_HeLa_*_ALL.csv.gz
-	@ Rscript $(PLOTM_DIR)/deseq.analysis.R $(DESEQ_DIR)/ LM $(PLOT_DESEQ)/
-	@ gzip $(DESEQ_DIR)/DESeq_LM_HeLa_*_ALL.csv
 
 
 plot: $(addprefix $(COUNTS_DIR)/, $(notdir $(subst 20_L1_1.fq.gz,all_timep.txt.gz, $(wildcard $(READS_DIR)/LM*_HeLa_20_L1_1.fq.gz))))
@@ -129,43 +117,47 @@ $(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(C
 	@ Rscript $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ $(GO_FILES)
 	@ gzip $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(GO_DIR)/*
 
+NETWORK_DIR=network.analysis
+NETWORK_DATA_DIR=$(NETWORK_DIR)/NCBI_data
+
+# Download data files from NCBI site
+$(NETWORK_DATA_DIR)/IL1A.txt $(NETWORK_DATA_DIR)/HLA-DMA.txt $(NETWORK_DATA_DIR)/CD59.txt $(NETWORK_DATA_DIR)/STAT1.txt $(NETWORK_DATA_DIR)/STAT5A.txt: $(NETWORK_DATA_DIR)/.d
+	# IL1A
+	@ wget "http://www.ncbi.nlm.nih.gov/gene/3552?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/IL1A.txt
+	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/3552" $(NETWORK_DATA_DIR)/IL1A.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/IL1A.txt
+	#HLA-DMA
+	@ wget "http://www.ncbi.nlm.nih.gov/gene/3108?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/HLA-DMA.txt
+	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/3108" $(NETWORK_DATA_DIR)/HLA-DMA.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/HLA-DMA.txt
+	#NFKBIE
+	@ wget "http://www.ncbi.nlm.nih.gov/gene/4794?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/NFKBIE.txt
+	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/4794" $(NETWORK_DATA_DIR)/NFKBIE.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/NFKBIE.txt
+	#CD59
+	@ wget "http://www.ncbi.nlm.nih.gov/gene/966?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/CD59.txt
+	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/966" $(NETWORK_DATA_DIR)/CD59.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/CD59.txt
+	#STAT1
+	@ wget "http://www.ncbi.nlm.nih.gov/gene/6772?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/STAT1.txt
+	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/6772" $(NETWORK_DATA_DIR)/STAT1.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/STAT1.txt
+	#STAT5A
+	@ wget "http://www.ncbi.nlm.nih.gov/gene/6776?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/STAT5A.txt
+	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/6776" $(NETWORK_DATA_DIR)/STAT5A.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/STAT5A.txt
+
+
+$(NETWORK_DIR)/network_index.html : $(NETWORK_DATA_DIR)/IL1A.txt $(NETWORK_DATA_DIR)/HLA-DMA.txt $(NETWORK_DATA_DIR)/CD59.txt $(NETWORK_DATA_DIR)/STAT1.txt $(NETWORK_DATA_DIR)/STAT5A.txt $(PLOT_ALL)/.d
+	@ gunzip $(COUNTS_DIR)/LM*_HeLa_all_timep.txt.gz
+	@ python $(SCRIPT_DIR)/correlate.net.py $(NETWORK_DATA_DIR)/ $(PLOT_ALL)/ $(NETWORK_DIR)/ $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM1_HeLa_all_timep.txt
+	@ python $(SCRIPT_DIR)/correlate.net.py $(NETWORK_DATA_DIR)/ $(PLOT_ALL)/ $(NETWORK_DIR)/ $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM2_HeLa_all_timep.txt
+	@ gzip $(COUNTS_DIR)/LM*_HeLa_all_timep.txt
+
+
+network-correlation: $(NETWORK_DIR)/network_index.html
+
 
 # Create a directory (use DIR/.d)
 %/.d:
 	@ mkdir -p $(@D)
 	@ touch $@
 
-html:
-$(WEB_DIR)/page%.html : $(GO_DIR)/GOsummary_%.csv.gz
-	@ gunzip $(GO_DIR)/GOsummary_$*.csv.gz
-	@ python html.py $(GO_DIR)/GOsummary_$*.csv $(WEB_DIR)/page$*.html
-	@ python web.py $(WEB_DIR)/page$*.html $(WEB_
-	
-	
-script, file_read, out_dir,tp, ont, plot_dir =argv
 
-#file_read: Table from excell with the information of one time point, one ontology (in html format)
-#out_dir: Directory where html with plots will be saved.
-#plot_dir: Directory where are the gene expression plots.
-
-#web.py ./ pageBP_20_semplot.html ./ 20 BP ./
-	
-
-OUT = /out
-
-.PHONY: all 
-all: make_directories $(OUT)/foo.o
-
-$(OUT)/foo.o: foo.c 
-    @$(COMPILE.C) -o $@ $<
-
-.PHONY: make_directories 
-make_directories: $(OUT)/
-
-$(OUT)/:
-    mkdir -p $@
-	
-	
 # Delete everything
 clean:
 	rm -r -f $(TRIM_DIR)
