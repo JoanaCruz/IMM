@@ -116,7 +116,29 @@ $(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(C
 	@ Rscript $(PLOTM_DIR)/heatmap.R  $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ LM$*
 	@ Rscript $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ $(GO_FILES)
 	@ gzip $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(GO_DIR)/*
+	
+	
+## Rules to do analysis between adjacent timepoints
+concatenate-adjacent-tp: $(subst $(READS_DIR)/,$(COUNTS_DIR)/, $(subst _HeLa_20_L1_1.fq.gz,_20.vs.60_tp.txt.gz, $(wildcard $(READS_DIR)/LM*_HeLa_20_L1_1.fq.gz)))
+	
+deseq-adjacent-tp: $(subst $(COUNTS_DIR)/,$(DESEQ_DIR)/DESeq_, $(subst _tp.txt.gz,_pvalue.csv.gz, $(wildcard $(COUNTS_DIR)/LM*.vs.*.txt.gz)))
 
+# Concatenate files from HTSeq-count (adjacent tp for the same condition)
+$(COUNTS_DIR)/LM%_20.vs.60_tp.txt.gz : $(COUNTS_DIR)/LM%_HeLa_20_L1.txt.gz $(COUNTS_DIR)/LM%_HeLa_60_L1.txt.gz $(COUNTS_DIR)/LM%_HeLa_120_L1.txt.gz $(COUNTS_DIR)/LM%_HeLa_240_L1.txt.gz     
+	@ gunzip $(COUNTS_DIR)/LM$*_HeLa_*_L1.txt.gz
+	@ paste $(COUNTS_DIR)/LM$*_HeLa_20_L1.txt $(COUNTS_DIR)/LM$*_HeLa_60_L1.txt | cut -f1,2,4- | sed '1 i\LM'$*'_HeLa_20\tLM'$*'_HeLa_60' > $(COUNTS_DIR)/LM$*_20.vs.60_tp.txt
+	@ paste $(COUNTS_DIR)/LM$*_HeLa_60_L1.txt $(COUNTS_DIR)/LM$*_HeLa_120_L1.txt | cut -f1,2,4- | sed '1 i\LM'$*'_HeLa_60\tLM'$*'_HeLa_120' > $(COUNTS_DIR)/LM$*_60.vs.120_tp.txt
+	@ paste $(COUNTS_DIR)/LM$*_HeLa_120_L1.txt $(COUNTS_DIR)/LM$*_HeLa_240_L1.txt | cut -f1,2,4- | sed '1 i\LM'$*'_HeLa_120\tLM'$*'_HeLa_240' > $(COUNTS_DIR)/LM$*_120.vs.240_tp.txt
+	@ gzip $(COUNTS_DIR)/LM$*_*.txt
+
+# Differential expression analysis between adjacent tp for each condition (i.e. T20 vs T60 from LM1 condition, etc..)
+$(DESEQ_DIR)/DESeq_%_pvalue.csv.gz : $(COUNTS_DIR)/%_tp.txt.gz concatenate-adjacent-tp
+	@ gunzip $(COUNTS_DIR)/$*_tp.txt.gz
+	@ Rscript $(SCRIPT_DIR)/DEseq.R $(COUNTS_DIR)/$*_tp.txt $* $(DESEQ_DIR)/
+	@ gzip $(DESEQ_DIR)/DESeq_$*_*.csv
+	
+
+## Do comparative analysis between immunological networks in papers and our gene expression
 NETWORK_DIR=network.analysis
 NETWORK_DATA_DIR=$(NETWORK_DIR)/NCBI_data
 
