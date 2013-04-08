@@ -116,8 +116,8 @@ $(COUNTS_DIR)/LM%_HeLa_all_timep.txt.gz : $(COUNTS_DIR)/LM%_HeLa_*_L1.txt.gz $(C
 	@ Rscript $(PLOTM_DIR)/heatmap.R  $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ LM$*
 	@ Rscript $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(PLOT_GO)/ $(GO_FILES)
 	@ gzip $(COUNTS_DIR)/LM$*_HeLa_all_timep.txt $(GO_DIR)/*
-	
-	
+
+
 ## Rules to do analysis between adjacent timepoints
 concatenate-adjacent-tp: $(subst $(READS_DIR)/,$(COUNTS_DIR)/, $(subst _HeLa_20_L1_1.fq.gz,_20.vs.60_tp.txt.gz, $(wildcard $(READS_DIR)/LM*_HeLa_20_L1_1.fq.gz)))
 	
@@ -136,7 +136,11 @@ $(DESEQ_DIR)/DESeq_%_pvalue.csv.gz : $(COUNTS_DIR)/%_tp.txt.gz concatenate-adjac
 	@ gunzip $(COUNTS_DIR)/$*_tp.txt.gz
 	@ Rscript $(SCRIPT_DIR)/DEseq.R $(COUNTS_DIR)/$*_tp.txt $* $(DESEQ_DIR)/
 	@ gzip $(DESEQ_DIR)/DESeq_$*_*.csv
-	
+
+plot-adjacent-tp : $(PLOT_DESEQ)/.d
+	@ gunzip $(DESEQ_DIR)/DESeq_*_ALL.csv.gz
+	@ Rscript $(SCRIPT_DIR)/analysis.deseq.rep.R $(DESEQ_DIR)/ $(PLOT_DESEQ)/
+	@ gzip  $(DESEQ_DIR)/DESeq_*_ALL.csv
 
 ## Do comparative analysis between immunological networks in papers and our gene expression
 NETWORK_DIR=network.analysis
@@ -163,13 +167,11 @@ $(NETWORK_DATA_DIR)/IL1A.txt $(NETWORK_DATA_DIR)/HLA-DMA.txt $(NETWORK_DATA_DIR)
 	@ wget "http://www.ncbi.nlm.nih.gov/gene/6776?report=full_report&format=text" -O $(NETWORK_DATA_DIR)/STAT5A.txt
 	@ sed "1i\http://www.ncbi.nlm.nih.gov/gene/6776" $(NETWORK_DATA_DIR)/STAT5A.txt > tempfile; mv tempfile $(NETWORK_DATA_DIR)/STAT5A.txt
 
-
 $(NETWORK_DIR)/network_index.html : $(NETWORK_DATA_DIR)/IL1A.txt $(NETWORK_DATA_DIR)/HLA-DMA.txt $(NETWORK_DATA_DIR)/CD59.txt $(NETWORK_DATA_DIR)/STAT1.txt $(NETWORK_DATA_DIR)/STAT5A.txt $(PLOT_ALL)/.d
 	@ gunzip $(COUNTS_DIR)/LM*_HeLa_all_timep.txt.gz
 	@ python $(SCRIPT_DIR)/correlate.net.py $(NETWORK_DATA_DIR)/ $(PLOT_ALL)/ $(NETWORK_DIR)/ $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM1_HeLa_all_timep.txt
 	@ python $(SCRIPT_DIR)/correlate.net.py $(NETWORK_DATA_DIR)/ $(PLOT_ALL)/ $(NETWORK_DIR)/ $(PLOTM_DIR)/gene.expression.per.goterm.R $(COUNTS_DIR)/LM2_HeLa_all_timep.txt
 	@ gzip $(COUNTS_DIR)/LM*_HeLa_all_timep.txt
-
 
 network-correlation: $(NETWORK_DIR)/network_index.html
 
