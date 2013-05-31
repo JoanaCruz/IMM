@@ -2,7 +2,7 @@
 args <- commandArgs(TRUE)
 library( "DESeq" )
 
-args = "LM1_HeLa_all_timep.txt"
+args = c("LM1_HeLa_all_timep.txt", "LM2_HeLa_all_timep.txt")
 count_table_LM1 = read.table(file = args[1], header=TRUE, row.names=1)
 count_table_LM2 = read.table(file = args[2], header=TRUE, row.names=1)
 
@@ -23,13 +23,14 @@ normalized_LM1 = counts(data_LM1, normalized=TRUE)
 
 # LM2
 dataDesign_LM2 = data.frame(
-        row.names = colnames( count_table_read_LM2 ),
-        condition = colnames( count_table_read_LM2 ),
-        libType = rep("paired-end",ncol(count_table_read_LM2)))
-conditions_LM2=dataDesign$condition
-libraryType_LM2=dataDesign$libType
+        row.names = colnames( count_table_LM2 ),
+        condition = colnames( count_table_LM2 ),
+        libType = rep("paired-end",ncol(count_table_LM2)))
+conditions_LM2=dataDesign_LM2$condition
+libraryType_LM2=dataDesign_LM2$libType
 
 data_LM2 = newCountDataSet(count_table_LM2, conditions_LM2)
+data_LM2 = estimateSizeFactors(data_LM2)
 normalized_LM2 = counts(data_LM2, normalized=TRUE)
 
 ## Get genes of interest
@@ -74,65 +75,8 @@ get_X_dot = function(count_table){
 	return(t(X_dot))
 }
 
-
-### Resolve gene-gene interaction matrix (Matrix W)
-## LM1
-
-# get genes of interest from LM1 condition (Matrix X)
-goi_LM1 = get_goi(as.data.frame(normalized_LM1))
-goi_LM1_mat = as.matrix(goi_LM1)
-# goi_LM1_mat = log2(as.matrix(goi_LM1))
-# goi_LM1_mat[goi_LM1_mat=="-Inf"] = -10
-colnames(goi_LM1_mat) = row.names(goi_LM1_mat) = NULL
-goi_120=goi_LM1_mat[1:4,]
- 
-# get X dot from linear interpolation (Matrix X.)
-X_dot = get_X_dot(t(goi_LM1_mat))
-X_dot_mat = as.matrix(X_dot)
-
-
-# Define known interaction in W matrix
-# 1 -> 2,3,4
-# 2 -> NULL
-# 3 -> 5
-# Infect,1 -> 4 -> NULL
-# 5 -> 6
-# 6 -> NULL
-
+## Get interaction matrix
 get_w = function(goi_120, X_dot_mat){
-	#because the first gene is influenced by the infection pseudo-gene
-	w = matrix(0 , nrow=7)
-	for( i in 1:6){
-		if(i==2 || i==3 || i==4 ){
-			# select only column with non zero w
-			X_select = cbind(goi_120[,1], goi_120[,7])
-			X_dot_select = X_dot_mat[,i]
-			# resolve
-			w_selected = qr.coef(qr(X_select), X_dot_select)
-			w=cbind(w, c(w_selected[1], rep(0,5), w_selected[2]))
-		} else if ( i==5 ) {
-			# select only column with non zero w
-			X_select = cbind(goi_120[,3], goi_120[,7])
-			X_dot_select = X_dot_mat[,i]
-			# resolve
-			w_selected = qr.coef(qr(X_select), X_dot_select)
-			w = cbind(w, c(0, 0, w_selected[1], 0, 0, 0, w_selected[2]))
-		} else if ( i==6 ) {
-			# select only column with non zero w
-			X_select = cbind(goi_120[,5], goi_120[,7])
-			X_dot_select = X_dot_mat[,i]
-			# resolve
-			w_selected = qr.coef(qr(X_select), X_dot_select)
-			w = cbind(w, c(rep(0,4), w_selected[1], 0, w_selected[2]))
-		}
-	}
-	return(w)
-	
-}
-
-
-get_w = function(goi_120, X_dot_mat){
-	#because the first gene is influenced by the infection pseudo-gene
 	w = c()
 	for( i in 1:6){
 		if( i==1 ){
@@ -171,30 +115,7 @@ get_w = function(goi_120, X_dot_mat){
 	
 }
 
-W = get_w(goi_120, X_dot_mat)
-
-# #ALL equal
-# pinv = function(A){
-# 	s <- svd(A)
-# 	D <- diag(s$d)
-# 	Dinv <- diag(1/s$d)
-# 	U <- s$u; V <- s$v
-# 	X = V%*%Dinv%*%t(U)
-# 	return(X)
-# }
-#  pinv(X_select)%*%X_dot_select
-#            [,1]
-# [1,] -0.1080768
-# [2,]  2.6945242
-# > lm.fit(X_select, X_dot_select)$coefficients
-#         x1         x2 
-# -0.1080768  2.6945242 
-# > qr.coef(qr(X_select), X_dot_select)
-# [1] -0.1080768  2.6945242
-
-
 ## Simulate kinetics
-
 # Set functions
 
 func1 = function(x1){
@@ -256,28 +177,254 @@ find_kinetics = function(div, goi_mat){
 	return(expression_list)
 }
 
-expression_list = find_kinetics(0.01, goi_LM1_mat)
-
-
 ## Plot simulated expression kinetics
-plot_kinetics = function(expression_list, goi_mat, div){
+plot_kinetics = function(expression_list, goi_mat, div, cond){
 	tp = c(0, 20, 60, 120, 240)
 	for( i in 1:6 ){
 	      exp=goi_mat[,i]
-	      png(filename= sprintf("kinetics_plot_gene%s_%s.png", i, div))
-	      plot(tp, exp)
+	      png(filename= sprintf("%skinetics_plot_sub.ctrl_log_gene%s_%s.png",cond, i, div))
+	      plot( tp, exp, ylim=c(min(min(expression_list[[i]]), min(exp)), max(max(expression_list[[i]]), max(exp))) )
 	      lines(expression_list[[7]], expression_list[[i]])
 	      dev.off()
 	}
 }
 
-plot_kinetics(expression_list, goi_LM1_mat, 0.01)
+
+##Permutation test
+mse = function(sim, obs) {mean( (sim - obs)^2, na.rm = FALSE)}
 
 
-# gene 1
-exp = goi_LM1_mat[,1]
-tp = c(0, 20, 60, 120, 240)
+permutation_test = function(count_mat, nb_resample, div){
+	tp=c(0, 20, 60, 120, 240)
+	mse_sample=c()
+	for( j in 1:nb_resample ){
+		# random goi selection
+		genes_id = sample(1:ncol(count_mat), 6)
+		goi = count_mat[,genes_id]
+		goi = cbind(goi, rep(1,5))
+		# investigate if each column have solution
+		used_id = genes_id
+		for( i in 1:ncol(goi) ){
+			goi_col=goi[,i]
+			while(length(which(goi_col[2:5]==0))>0){
+				genes_id_new = sample(1:ncol(count_mat), 1)
+				if(!(genes_id_new %in% used_id)){
+				goi_col = count_mat[,genes_id_new]
+				}
+			}
+			goi[, i] = goi_col
+		}
+		# get X_dot
+		X_dot = get_X_dot(t(goi))
+		X_dot_mat = as.matrix(X_dot)
+		# get W
+		goi_120 = goi[1:4,]
+		W = get_w(goi_120, X_dot_mat)
+		# Integrate
+		expression_list = find_kinetics(div, goi)
+		# measeure mse
+		known_expression_id = c()
+		for( i in 1:length(tp)){
+			known_expression_id = c(known_expression_id, match(tp[i], expression_list[[7]]))
+		}
+		mse_matrix = c()
+		mse_array = c()
+		for(i in 1:6){
+			mse_matrix = rbind(mse_matrix, expression_list[[i]][known_expression_id])
+			mse_array=c(mse_array, mse(goi[,i],mse_matrix[i,]))
+		}
+	mse_sample=c(mse_sample, sum(mse_array))
+	}
+	
+	return(mse_sample)
+}
 
-plot(tp, exp)
-lines(expression_list[[7]], expression_list[[1]])
+measure_goi_mse = function(goi_mat, div){
+	tp=c(0, 20, 60, 120, 240)
+	mse_sample=c()
+	# get X_dot
+	X_dot = get_X_dot(t(goi_mat))
+	X_dot_mat = as.matrix(X_dot)
+	# get W
+	goi_120 = goi_mat[1:4,]
+	W = get_w(goi_120, X_dot_mat)
+	# Integrate
+	expression_list = find_kinetics(div, goi_mat)
+	# measeure mse
+	known_expression_id = c()
+	for( i in 1:length(tp)){
+		known_expression_id = c(known_expression_id, match(tp[i], expression_list[[7]]))
+	}
+	mse_matrix = c()
+	mse_array = c()
+	for(i in 1:6){
+		mse_matrix = rbind(mse_matrix, expression_list[[i]][known_expression_id])
+		mse_array=c(mse_array, mse(goi[,i],mse_matrix[i,]))
+	}
+	mse_sample=c(mse_sample, sum(mse_array))
+	return(mse_sample)
+}
+
+### Resolve gene-gene interaction matrix (Matrix W)
+## LM1
+
+# get genes of interest from LM1 condition (Matrix X)
+goi_LM1 = get_goi(as.data.frame(normalized_LM1))
+goi_LM1_mat = as.matrix(goi_LM1)
+goi_LM1_mat = log2(as.matrix(goi_LM1_mat+1))
+colnames(goi_LM1_mat) = row.names(goi_LM1_mat) = NULL
+#subtract control
+for(i in 1:6){
+	goi_LM1_mat[,i] = goi_LM1_mat[,i] - goi_LM1_mat[1,i] 
+}
+goi_120=goi_LM1_mat[1:4,]
+ 
+# get X dot from linear interpolation (Matrix X.)
+X_dot = get_X_dot(t(goi_LM1_mat))
+X_dot_mat = as.matrix(X_dot)
+
+# Define known interaction in W matrix
+# 1 -> 2,3,4
+# 2 -> NULL
+# 3 -> 5
+# Infect,1 -> 4 -> NULL
+# 5 -> 6
+# 6 -> NULL
+
+W = get_w(goi_120, X_dot_mat)
+
+# #ALL equal
+# pinv = function(A){
+# 	s <- svd(A)
+# 	D <- diag(s$d)
+# 	Dinv <- diag(1/s$d)
+# 	U <- s$u; V <- s$v
+# 	X = V%*%Dinv%*%t(U)
+# 	return(X)
+# }
+#  pinv(X_select)%*%X_dot_select
+#            [,1]
+# [1,] -0.1080768
+# [2,]  2.6945242
+# > lm.fit(X_select, X_dot_select)$coefficients
+#         x1         x2 
+# -0.1080768  2.6945242 
+# > qr.coef(qr(X_select), X_dot_select)
+# [1] -0.1080768  2.6945242
+
+## Simulate kinetics
+
+expression_list = find_kinetics(0.01, goi_LM1_mat)
+plot_kinetics(expression_list, goi_LM1_mat, 0.01, "LM1")
+
+# # gene 1
+# exp = goi_LM1_mat[,1]
+# tp = c(0, 20, 60, 120, 240)
+# 
+# plot(tp, exp)
+# lines(expression_list[[7]], expression_list[[1]])
+
+## Permutation test
+
+# Set all genes as log and subtract control value
+count_mat = as.matrix(normalized_LM1)
+count_mat = t(log2(count_mat+1))
+#colnames(count_mat) = row.names(count_mat) = NULL
+#subtract control
+for(i in 1:ncol(count_mat)){
+	count_mat[,i] = count_mat[,i] - count_mat[1,i] 
+}
+
+nb_resample=500
+div=1
+mse_sample = permutation_test(count_mat, nb_resample, div)
+mse_goi = measure_goi_mse(goi_LM1_mat, div)
+hist(mse_sample)
+abline(v=mse_goi, col="red")
+
+ratio = length(mse_sample[mse_sample < mse_goi])
+p_value = ratio/nb_resample
+
+
+
+### LM2
+# get genes of interest from LM1 condition (Matrix X)
+goi_LM2 = get_goi(as.data.frame(normalized_LM2))
+goi_LM2_mat = as.matrix(goi_LM2)
+goi_LM2_mat = log2(as.matrix(goi_LM2_mat+1))
+colnames(goi_LM2_mat) = row.names(goi_LM2_mat) = NULL
+#subtract control
+for(i in 1:6){
+	goi_LM2_mat[,i] = goi_LM2_mat[,i] - goi_LM2_mat[1,i] 
+}
+goi_120=goi_LM2_mat[1:4,]
+ 
+# get X dot from linear interpolation (Matrix X.)
+X_dot = get_X_dot(t(goi_LM2_mat))
+X_dot_mat = as.matrix(X_dot)
+
+# Define known interaction in W matrix
+# 1 -> 2,3,4
+# 2 -> NULL
+# 3 -> 5
+# Infect,1 -> 4 -> NULL
+# 5 -> 6
+# 6 -> NULL
+
+W = get_w(goi_120, X_dot_mat)
+
+# #ALL equal
+# pinv = function(A){
+# 	s <- svd(A)
+# 	D <- diag(s$d)
+# 	Dinv <- diag(1/s$d)
+# 	U <- s$u; V <- s$v
+# 	X = V%*%Dinv%*%t(U)
+# 	return(X)
+# }
+#  pinv(X_select)%*%X_dot_select
+#            [,1]
+# [1,] -0.1080768
+# [2,]  2.6945242
+# > lm.fit(X_select, X_dot_select)$coefficients
+#         x1         x2 
+# -0.1080768  2.6945242 
+# > qr.coef(qr(X_select), X_dot_select)
+# [1] -0.1080768  2.6945242
+
+## Simulate kinetics
+
+expression_list = find_kinetics(0.01, goi_LM2_mat)
+plot_kinetics(expression_list, goi_LM2_mat, 0.01, "LM2")
+
+# # gene 1
+# exp = goi_LM1_mat[,1]
+# tp = c(0, 20, 60, 120, 240)
+# 
+# plot(tp, exp)
+# lines(expression_list[[7]], expression_list[[1]])
+
+## Permutation test
+
+# Set all genes as log and subtract control value
+count_mat = as.matrix(normalized_LM2)
+count_mat = t(log2(count_mat+1))
+#colnames(count_mat) = row.names(count_mat) = NULL
+#subtract control
+for(i in 1:ncol(count_mat)){
+	count_mat[,i] = count_mat[,i] - count_mat[1,i] 
+}
+
+nb_resample=1000
+div=1
+mse_sample = permutation_test(count_mat, nb_resample, div)
+mse_goi = measure_goi_mse(goi_LM2_mat, div)
+
+ratio = length(mse_sample[mse_sample < mse_goi])
+p_value = ratio/nb_resample
+
+png(sprintf("hist_%ssamples_%sdev_LM2.png", nb_resample, div))
+hist(mse_sample, breaks=50, main=sprintf("LM2; %s samples; %s dev; p-value=%s", nb_resample, div, p_value))
+abline(v=mse_goi, col="red")
+dev.off()
 
