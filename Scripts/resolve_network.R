@@ -51,7 +51,7 @@ get_goi = function(count_table){
 		line_count_table = as.matrix(count_table[pos_gene,])
 		tab_goi = rbind(tab_goi,line_count_table)
 	}
-	tab_goi = rbind(tab_goi,rep(1,6))
+	tab_goi = rbind(tab_goi,rep(1,5))
 	return(t(tab_goi))
 }
 
@@ -130,8 +130,8 @@ func3 = function(x1, x3){
 	W[1,3]*x1 + W[3,3]*x3 + W[7,3]
 }
 
-func4  = function(x1, x3){
-	W[1,4]*x1 + W[4,4]*x3 + W[7,4]
+func4  = function(x1, x4){
+	W[1,4]*x1 + W[4,4]*x4 + W[7,4]
 }
 
 func5  = function(x1, x5){
@@ -197,6 +197,7 @@ mse = function(sim, obs) {mean( (sim - obs)^2, na.rm = FALSE)}
 permutation_test = function(count_mat, nb_resample, div){
 	tp=c(0, 20, 60, 120, 240)
 	mse_sample=c()
+	var_sample=c()
 	for( j in 1:nb_resample ){
 		# random goi selection
 		genes_id = sample(1:ncol(count_mat), 6)
@@ -229,19 +230,23 @@ permutation_test = function(count_mat, nb_resample, div){
 		}
 		mse_matrix = c()
 		mse_array = c()
+		var_array = c()
 		for(i in 1:6){
 			mse_matrix = rbind(mse_matrix, expression_list[[i]][known_expression_id])
 			mse_array=c(mse_array, mse(goi[,i],mse_matrix[i,]))
+			var_array = c(var_array, var(goi[,i]))
 		}
-	mse_sample=c(mse_sample, sum(mse_array))
+	mse_sample=c(mse_sample, sum(mse_array/var_array))
+	var_sample=c(var_sample, sum(var_array))
 	}
 	
-	return(mse_sample)
+	return(list(mse_sample, var_sample))
 }
 
 measure_goi_mse = function(goi_mat, div){
 	tp=c(0, 20, 60, 120, 240)
 	mse_sample=c()
+	var_sample=c()
 	# get X_dot
 	X_dot = get_X_dot(t(goi_mat))
 	X_dot_mat = as.matrix(X_dot)
@@ -257,13 +262,17 @@ measure_goi_mse = function(goi_mat, div){
 	}
 	mse_matrix = c()
 	mse_array = c()
+	var_array = c()
 	for(i in 1:6){
 		mse_matrix = rbind(mse_matrix, expression_list[[i]][known_expression_id])
-		mse_array=c(mse_array, mse(goi[,i],mse_matrix[i,]))
+		mse_array=c(mse_array, mse(goi_mat[,i],mse_matrix[i,]))
+		var_array = c(var_array, var(goi_mat[,i]))
 	}
-	mse_sample=c(mse_sample, sum(mse_array))
-	return(mse_sample)
+	mse_sample=c(mse_sample, sum(mse_array/var_array))
+	var_sample=c(var_sample, sum(var_array))
+	return(list(mse_sample, var_sample))
 }
+
 
 ### Resolve gene-gene interaction matrix (Matrix W)
 ## LM1
@@ -272,7 +281,7 @@ measure_goi_mse = function(goi_mat, div){
 goi_LM1 = get_goi(as.data.frame(normalized_LM1))
 goi_LM1_mat = as.matrix(goi_LM1)
 goi_LM1_mat = log2(as.matrix(goi_LM1_mat+1))
-colnames(goi_LM1_mat) = row.names(goi_LM1_mat) = NULL
+#colnames(goi_LM1_mat) = row.names(goi_LM1_mat) = NULL
 #subtract control
 for(i in 1:6){
 	goi_LM1_mat[,i] = goi_LM1_mat[,i] - goi_LM1_mat[1,i] 
@@ -314,15 +323,37 @@ W = get_w(goi_120, X_dot_mat)
 
 ## Simulate kinetics
 
-expression_list = find_kinetics(0.01, goi_LM1_mat)
+expression_list = find_kinetics(0.1, goi_LM1_mat)
 plot_kinetics(expression_list, goi_LM1_mat, 0.01, "LM1")
 
+tp = c(0, 20, 60, 120, 240)
+     plot( tp, exp, ylim=c(min(min(expression_list[[i]]), min(exp)), max(max(expression_list[[i]]), max(exp))) )
+	      lines(expression_list[[7]], expression_list[[i]])
+	      dev.off()
+
+
 # # gene 1
-# exp = goi_LM1_mat[,1]
-# tp = c(0, 20, 60, 120, 240)
-# 
-# plot(tp, exp)
-# lines(expression_list[[7]], expression_list[[1]])
+exp = goi_LM1_mat[,1]
+tp = c(0, 20, 60, 120, 240)
+
+plot(tp, exp,ylab="log2(expression)", xlab="Time [min]")
+lines(expression_list[[7]], expression_list[[1]])
+
+
+
+tp = c(0, 20, 60, 120, 240)
+goi_mat=goi_LM1_mat
+gene=c('IL1A', 'HLA-DMA', 'NFKBIE', 'CD59', 'STAT1', 'STAT5A')
+par(mfrow=c(2,3))
+	for( i in 1:6 ){
+	      print(i)
+	      exp=goi_mat[,i]
+	      plot( tp, exp, col="blue", pch=19,main=gene[i], xlab=NA, ylab=NA, ylim=c(min(min(expression_list[[i]]), min(exp)), max(max(expression_list[[i]]), max(exp))) )
+	      lines(expression_list[[7]], expression_list[[i]])
+	      mtext("Time [min]", side=1, outer=TRUE, line=-2)
+	mtext("log2(expression)", side=2, outer=TRUE, line=-1.5)
+	  }
+	      dev.off()
 
 ## Permutation test
 
@@ -335,15 +366,26 @@ for(i in 1:ncol(count_mat)){
 	count_mat[,i] = count_mat[,i] - count_mat[1,i] 
 }
 
-nb_resample=500
+nb_resample=1000
 div=1
 mse_sample = permutation_test(count_mat, nb_resample, div)
 mse_goi = measure_goi_mse(goi_LM1_mat, div)
-hist(mse_sample)
-abline(v=mse_goi, col="red")
-
-ratio = length(mse_sample[mse_sample < mse_goi])
+ratio = length(mse_sample[[1]][mse_sample[[1]] < mse_goi[[1]]])
 p_value = ratio/nb_resample
+
+png(sprintf("hist.unexplained_%ssamples_%sdev_LM1.png", nb_resample, div))
+hist(c(mse_goi[[1]],mse_sample[[1]]), breaks=100, main=sprintf("Permutation test\nLM1 sample with p-value=%s",  p_value),xlab="MSE/Var")
+abline(v=mse_goi[[1]], col="red")
+dev.off()
+
+
+hist(c(mse_goi[[1]],mse_sample[[1]]), breaks=400, xlab="MSE/Var", xlim=c(0,250))
+abline(v=mse_goi[[1]], col="red", lwd=2)
+
+
+# Investigate variance distribution
+hist(c(mse_goi[[2]],mse_sample[[2]]), breaks=100, main=sprintf("Unexplained variation\nLM1; %s samples; %s dev; p-value=%s", nb_resample, div, p_value),xlab="unexplained variation")
+abline(v=mse_goi[[2]], col="red")
 
 
 
@@ -404,6 +446,19 @@ plot_kinetics(expression_list, goi_LM2_mat, 0.01, "LM2")
 # plot(tp, exp)
 # lines(expression_list[[7]], expression_list[[1]])
 
+tp = c(0, 20, 60, 120, 240)
+goi_mat=goi_LM2_mat
+gene=c('IL1A', 'HLA-DMA', 'NFKBIE', 'CD59', 'STAT1', 'STAT5A')
+par(mfrow=c(2,3))
+	for( i in 1:6 ){
+	      print(i)
+	      exp=goi_mat[,i]
+	      plot( tp, exp, col="blue", pch=19,main=gene[i], xlab=NA, ylab=NA, ylim=c(min(min(expression_list[[i]]), min(exp)), max(max(expression_list[[i]]), max(exp))) )
+	      lines(expression_list[[7]], expression_list[[i]])
+	      mtext("Time [min]", side=1, outer=TRUE, line=-2)
+	mtext("log2(expression)", side=2, outer=TRUE, line=-1.5)
+	  }
+
 ## Permutation test
 
 # Set all genes as log and subtract control value
@@ -420,11 +475,24 @@ div=1
 mse_sample = permutation_test(count_mat, nb_resample, div)
 mse_goi = measure_goi_mse(goi_LM2_mat, div)
 
-ratio = length(mse_sample[mse_sample < mse_goi])
+ratio = length(mse_sample[[1]][mse_sample[[1]] < mse_goi[[1]]])
 p_value = ratio/nb_resample
 
 png(sprintf("hist_%ssamples_%sdev_LM2.png", nb_resample, div))
-hist(mse_sample, breaks=50, main=sprintf("LM2; %s samples; %s dev; p-value=%s", nb_resample, div, p_value))
+hist(c(mse_goi[[1]],mse_sample[[1]]), breaks=100, main=sprintf("LM2; %s samples; %s dev; p-value=%s", nb_resample, div, p_value))
+abline(v=mse_goi, col="red")
+#dev.off()
+
+png(sprintf("hist.unexplained_%ssamples_%sdev_LM2.png", nb_resample, div))
+hist(c(mse_goi[[1]],mse_sample[[1]]), breaks=100, main=sprintf("Unexplained variation\nLM2; %s samples; %s dev; p-value=%s", nb_resample, div, p_value), xlab="unexplained variation")
 abline(v=mse_goi, col="red")
 dev.off()
 
+# Investigate variance distribution
+hist(c(mse_goi[[2]],mse_sample[[2]]), breaks=100, main=sprintf("Unexplained variation\nLM1; %s samples; %s dev; p-value=%s", nb_resample, div, p_value),xlab="unexplained variation")
+abline(v=mse_goi[[2]], col="red")
+
+
+
+hist(c(mse_goi[[1]],mse_sample[[1]]), breaks=500, xlab="MSE/Var", xlim=c(0,400))
+abline(v=mse_goi[[1]], col="red", lwd=2)
